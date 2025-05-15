@@ -13,7 +13,15 @@ body {
     overflow: hidden; /* Hide overflowing images */
     border-radius: 8px; /* Match rounded corners */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Match shadow style */
+    opacity: 0.8; /* Default opacity (slightly transparent) */
+    transition: opacity 0.3s ease-in-out; /* Smooth transition for opacity change */
 }
+
+/* Make the slideshow fully opaque on hover */
+.slideshow-container:hover {
+    opacity: 1;
+}
+
 
 .mySlides {
     display: none; /* Hide slides by default */
@@ -95,7 +103,7 @@ body {
     background-image: url('/logo.png'); /* Path to your logo */
     background-repeat: no-repeat;
     background-position: center center;
-    background-size: 100%; /* Adjusted size: Increase this percentage to make the logo larger */
+    background-size: 60%; /* Adjusted size: Increase this percentage to make the logo larger */
     opacity: 0.2; /* Adjust transparency (0.0 to 1.0) */
     /* Consider background-attachment: fixed; if you want it to stay in place */
     position: absolute; /* Position absolutely within its relative parent */
