@@ -1,0 +1,187 @@
+                                                                          <!DOCTYPE html>
+                                                                          <html lang="en">
+                                                                          <head>
+                                                                              <meta charset="UTF-8">
+                                                                              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                                                              <title>Spirit of Youth Phoenix Football Team</title>
+                                                                              <script src="https://cdn.tailwindcss.com"></script>
+                                                                              <link rel="stylesheet" href="/style.css">
+                                                                              <%# Removed the <style> block and its content %>
+                                                                          </head>
+                                                                          <body class="bg-blue-50 text-gray-800 leading-relaxed">
+                                                                              <header class="bg-gradient-to-r from-blue-700 to-blue-900 text-white p-3 shadow-lg border-b-4 border-yellow-400"> <%# Reduced padding from p-4 to p-3 %>
+                                                                                  <div class="container mx-auto flex items-center justify-between flex-wrap">
+                                                                                      <div class="flex items-center mb-2 md:mb-0">
+                                                                                          <img src="/logo.png" alt="Spirit of Youth Phoenix Team Logo" class="w-20 h-20 mr-3 rounded-full"> <%# Increased logo size to w-20 h-20 (5rem x 5rem) %>
+                                                                                          <h1 class="text-3xl font-extrabold tracking-tight text-yellow-300 drop-shadow-md">Spirit of Youth Phoenix</h1>
+                                                                                      </div>
+                                                                                      <nav>
+                                                                                          <ul class="flex flex-wrap justify-center space-x-4 text-lg">
+                                                                                              <li><a href="/" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Home</a></li>
+                                                                                              <li><a href="/videos" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Videos</a></li>
+                                                                                              <%# Check if user is logged in %>
+                                                                                              <% if (user) { %>
+                                                                                                  <li><a href="/parent-area" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Parent Area</a></li>
+                                                                                                  <li><a href="/logout" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Logout (<%= user.username %>)</a></li>
+                                                                                              <% } else { %>
+                                                                                                  <li><a href="/login" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Login</a></li>
+                                                                                                  <li><a href="/register" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Register</a></li>
+                                                                                              <% } %>
+                                                                                          </ul>
+                                                                                      </nav>
+                                                                                  </div>
+                                                                              </header>
+
+                                                                              <main class="container mx-auto mt-8 p-4 md:px-8">
+                                                                                  <%# Background element for the logo %>
+                                                                                  <div class="main-content-background"></div>
+
+                                                                                  <%# Image Slideshow Section %>
+                                                                                  <section class="mb-8">
+                                                                                      <div class="slideshow-container">
+                                                                                          <%# Slides (Replace with your actual image paths) %>
+                                                                                          <div class="mySlides fade">
+                                                                                              <img src="/carousel/teampens.jpg" alt="Team Photo 1">
+                                                                                              <div class="text">Penalty drama at the Blackpool Cup</div> <%# Changed Caption Text 1 %>
+                                                                                          </div>
+                                                                                          <div class="mySlides fade">
+                                                                                              <img src="https://placehold.co/1000x400/D1D5DB/1F2937?text=Match+Action+2" alt="Match Action 2">
+                                                                                              <div class="text">Caption Text 2</div>
+                                                                                          </div>
+                                                                                          <div class="mySlides fade">
+                                                                                              <img src="https://placehold.co/1000x400/9CA3AF/1F2937?text=Training+Drill+3" alt="Training Drill 3">
+                                                                                              <div class="text">Caption Text 3</div>
+                                                                                          </div>
+
+                                                                                          <%# Next and previous buttons %>
+                                                                                          <a class="prev" onclick="plusSlides(-1)">&#10094;</a>
+                                                                                          <a class="next" onclick="plusSlides(1)">&#10095;</a>
+                                                                                      </div>
+                                                                                      <br>
+
+                                                                                      <%# The dots/circles %>
+                                                                                      <div style="text-align:center">
+                                                                                          <span class="dot" onclick="currentSlide(1)"></span>
+                                                                                          <span class="dot" onclick="currentSlide(2)"></span>
+                                                                                          <span class="dot" onclick="currentSlide(3)"></span>
+                                                                                      </div>
+                                                                                  </section>
+                                                                                  <%# End Image Slideshow Section %>
+
+
+                                                                                  <section class="bg-white rounded-lg shadow-xl p-6 mb-8 border-t-4 border-blue-600">
+                                                                                      <h2 class="text-3xl md:text-4xl font-bold mb-4 text-blue-800">Welcome to Spirit of Youth Phoenix!</h2>
+                                                                                      <p class="text-lg text-gray-700">This is the homepage for the Phoenix football team. You can add team news, upcoming matches, and other information here. We're excited to share our journey with you!</p>
+
+                                                                                      <% if (user) { %>
+                                                                                          <div class="mt-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-md shadow-sm">
+                                                                                              Welcome back, <span class="font-semibold"><%= user.username %></span>! Check out the <a href="/parent-area" class="underline hover:text-green-900">Parent Area</a> for exclusive Phoenix content.
+                                                                                          </div>
+                                                                                      <% } else { %>
+                                                                                          <div class="mt-6 p-4 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded-md shadow-sm">
+                                                                                              <span class="font-semibold">Join the Phoenix Family!</span> <a href="/login" class="underline hover:text-yellow-900">Log in</a> or <a href="/register" class="underline hover:text-yellow-900">Register</a> to access exclusive team content and match footage!
+                                                                                          </div>
+                                                                                      <% } %>
+                                                                                  </section>
+
+                                                                                  <%# Example Section: Latest News %>
+                                                                                  <section class="bg-white rounded-lg shadow-xl p-6 mb-8 border-t-4 border-blue-600">
+                                                                                      <h3 class="text-2xl font-bold mb-4 text-blue-800">Latest Phoenix News</h3>
+                                                                                      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                                                          <%# News Article 1 %>
+                                                                                          <div class="border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition duration-300 ease-in-out">
+                                                                                              <h4 class="text-xl font-semibold mb-2 text-blue-700">Big Win Against Rivals!</h4>
+                                                                                              <p class="text-gray-700 text-sm mb-3">Our Phoenix team secured a decisive victory in Saturday's match...</p>
+                                                                                              <a href="#" class="text-yellow-600 hover:underline font-medium">Read More &rarr;</a>
+                                                                                          </div>
+                                                                                           <%# News Article 2 %>
+                                                                                          <div class="border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition duration-300 ease-in-out">
+                                                                                              <h4 class="text-xl font-semibold mb-2 text-blue-700">Upcoming Match Schedule Released</h4>
+                                                                                              <p class="text-gray-700 text-sm mb-3">Get ready for an exciting Phoenix season! The full schedule is now available...</p>
+                                                                                              <a href="#" class="text-yellow-600 hover:underline font-medium">Read More &rarr;</a>
+                                                                                          </div>
+                                                                                      </div>
+                                                                                  </section>
+
+                                                                                  <%# Example Section: Featured Video (Link to videos page) %>
+                                                                                   <section class="bg-white rounded-lg shadow-xl p-6 border-t-4 border-blue-600">
+                                                                                      <h3 class="text-2xl font-bold mb-4 text-blue-800">Featured Phoenix Videos</h3>
+                                                                                      <p class="text-lg text-gray-700 mb-6">Catch up on the latest match highlights and training footage from the Phoenix.</p>
+                                                                                      <div class="text-center">
+                                                                                           <a href="/videos" class="inline-block bg-yellow-500 hover:bg-yellow-600 text-blue-900 font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition duration-300 ease-in-out transform hover:-translate-y-1">
+                                                                                              View All Videos
+                                                                                          </a>
+                                                                                      </div>
+                                                                                  </section>
+
+
+                                                                                  <%# Add more content sections as needed %>
+
+                                                                              </main>
+
+                                                                              <footer class="bg-gray-900 text-gray-300 p-6 mt-12">
+                                                                                  <div class="container mx-auto text-center text-sm">
+                                                                                      &copy; <%= new Date().getFullYear() %> Spirit of Youth Phoenix. All rights reserved.
+                                                                                      <div class="mt-2">
+                                                                                          <a href="#" class="text-gray-400 hover:text-white mx-2">Privacy Policy</a>
+                                                                                          <span class="text-gray-600">|</span>
+                                                                                          <a href="#" class="text-gray-400 hover:text-white mx-2">Terms of Service</a>
+                                                                                      </div>
+                                                                                  </div>
+                                                                              </footer>
+
+                                                                              <script>
+                                                                                  let slideIndex = 1;
+                                                                                  showSlides(slideIndex);
+
+                                                                                  // Next/previous controls
+                                                                                  function plusSlides(n) {
+                                                                                    showSlides(slideIndex += n);
+                                                                                  }
+
+                                                                                  // Thumbnail image controls
+                                                                                  function currentSlide(n) {
+                                                                                    showSlides(slideIndex = n);
+                                                                                  }
+
+                                                                                  function showSlides(n) {
+                                                                                    let i;
+                                                                                    let slides = document.getElementsByClassName("mySlides");
+                                                                                    let dots = document.getElementsByClassName("dot");
+                                                                                    if (n > slides.length) {slideIndex = 1}
+                                                                                    if (n < 1) {slideIndex = slides.length}
+                                                                                    for (i = 0; i < slides.length; i++) {
+                                                                                      slides[i].style.display = "none";
+                                                                                    }
+                                                                                    for (i = 0; i < dots.length; i++) {
+                                                                                      dots[i].className = dots[i].className.replace(" active", "");
+                                                                                    }
+                                                                                    slides[slideIndex-1].style.display = "block";
+                                                                                    dots[slideIndex-1].className += " active";
+                                                                                  }
+
+                                                                                  <%# Optional: Auto-advance the slideshow %>
+                                                                                  <%#
+                                                                                  let autoSlideIndex = 0;
+                                                                                  autoShowSlides();
+
+                                                                                  function autoShowSlides() {
+                                                                                    let i;
+                                                                                    let slides = document.getElementsByClassName("mySlides");
+                                                                                    let dots = document.getElementsByClassName("dot");
+                                                                                    for (i = 0; i < slides.length; i++) {
+                                                                                      slides[i].style.display = "none";
+                                                                                    }
+                                                                                    autoSlideIndex++;
+                                                                                    if (autoSlideIndex > slides.length) {autoSlideIndex = 1}
+                                                                                    for (i = 0; i < dots.length; i++) {
+                                                                                      dots[i].className = dots[i].className.replace(" active", "");
+                                                                                    }
+                                                                                    slides[autoSlideIndex-1].style.display = "block";
+                                                                                    dots[autoSlideIndex-1].className += " active";
+                                                                                    setTimeout(autoShowSlides, 5000); // Change image every 5 seconds
+                                                                                  }
+                                                                                  %>
+                                                                              </script>
+                                                                          </body>
+                                                                          </html>

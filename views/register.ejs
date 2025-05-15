@@ -1,0 +1,86 @@
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Register - Spirit of Youth Phoenix</title>
+            <script src="https://cdn.tailwindcss.com"></script>
+            <link rel="stylesheet" href="/style.css">
+        </head>
+        <body class="bg-blue-50 text-gray-800 leading-relaxed">
+            <header class="bg-gradient-to-r from-blue-700 to-blue-900 text-white p-3 shadow-lg border-b-4 border-yellow-400">
+                <div class="container mx-auto flex items-center justify-between flex-wrap">
+                    <div class="flex items-center mb-2 md:mb-0">
+                        <img src="/logo.png" alt="Spirit of Youth Phoenix Team Logo" class="w-20 h-20 mr-3 rounded-full">
+                        <h1 class="text-3xl font-extrabold tracking-tight text-yellow-300 drop-shadow-md">Spirit of Youth Phoenix</h1>
+                    </div>
+                    <nav>
+                        <ul class="flex flex-wrap justify-center space-x-4 text-lg">
+                            <li><a href="/" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Home</a></li>
+                            <li><a href="/videos" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Videos</a></li>
+                            <%# Check if user is logged in %>
+                            <% if (user) { %>
+                                <li><a href="/parent-area" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Parent Area</a></li>
+                                <li><a href="/logout" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Logout (<%= user.username %>)</a></li>
+                            <% } else { %>
+                                <li><a href="/login" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Login</a></li>
+                                <li><a href="/register" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Register</a></li>
+                            <% } %>
+                        </ul>
+                    </nav>
+                </div>
+            </header>
+
+             <main class="container mx-auto mt-8 p-4 md:px-8 flex justify-center items-center min-h-[calc(100vh-200px)]"> <%# Added flex and min-height for centering %>
+                 <%# Background element for the logo %>
+                <div class="main-content-background"></div>
+
+                <section class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md border-t-4 border-blue-600"> <%# Added max-w-md for form width %>
+                    <h2 class="text-2xl font-bold mb-6 text-center text-blue-800">Parent Registration</h2>
+
+                     <%# Display error messages %>
+                    <% if (error) { %>
+                        <p class="text-red-600 text-center mb-4"><%= error %></p>
+                    <% } %>
+
+                    <form action="/register" method="POST" class="space-y-4">
+                        <div>
+                            <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                            <input type="text" id="username" name="username" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                            <input type="password" id="password" name="password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                         <%# Add confirm password field if needed %>
+                         <%#
+                         <div>
+                            <label for="confirm_password" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                            <input type="password" id="confirm_password" name="confirm_password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                        %>
+                        <div>
+                            <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-blue-900 bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition duration-300 ease-in-out">
+                                Register
+                            </button>
+                        </div>
+                    </form>
+                     <p class="mt-6 text-center text-sm text-gray-600">
+                        Already have an account? <a href="/login" class="font-medium text-blue-600 hover:text-blue-500">Login here</a>.
+                    </p>
+                </section>
+
+            </main>
+
+            <footer class="bg-gray-900 text-gray-300 p-6 mt-12">
+                <div class="container mx-auto text-center text-sm">
+                    &copy; <%= new Date().getFullYear() %> Spirit of Youth Phoenix. All rights reserved.
+                    <div class="mt-2">
+                        <a href="#" class="text-gray-400 hover:text-white mx-2">Privacy Policy</a>
+                        <span class="text-gray-600">|</span>
+                        <a href="#" class="text-gray-400 hover:text-white mx-2">Terms of Service</a>
+                    </div>
+                </div>
+            </footer>
+        </body>
+        </html>

@@ -1,0 +1,92 @@
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title><%= video.title %> - Spirit of Youth Phoenix</title>
+            <script src="https://cdn.tailwindcss.com"></script>
+            <link rel="stylesheet" href="/style.css">
+        </head>
+        <body class="bg-blue-50 text-gray-800 leading-relaxed">
+            <header class="bg-gradient-to-r from-blue-700 to-blue-900 text-white p-3 shadow-lg border-b-4 border-yellow-400">
+                <div class="container mx-auto flex items-center justify-between flex-wrap">
+                    <div class="flex items-center mb-2 md:mb-0">
+                        <img src="/logo.png" alt="Spirit of Youth Phoenix Team Logo" class="w-20 h-20 mr-3 rounded-full">
+                        <h1 class="text-3xl font-extrabold tracking-tight text-yellow-300 drop-shadow-md">Spirit of Youth Phoenix</h1>
+                    </div>
+                    <nav>
+                        <ul class="flex flex-wrap justify-center space-x-4 text-lg">
+                            <li><a href="/" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Home</a></li>
+                            <li><a href="/videos" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Videos</a></li>
+                            <%# Check if user is logged in %>
+                            <% if (user) { %>
+                                <li><a href="/parent-area" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Parent Area</a></li>
+                                <li><a href="/logout" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Logout (<%= user.username %>)</a></li>
+                            <% } else { %>
+                                <li><a href="/login" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Login</a></li>
+                                <li><a href="/register" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Register</a></li>
+                            <% } %>
+                        </ul>
+                    </nav>
+                </div>
+            </header>
+
+            <main class="container mx-auto mt-8 p-4 md:px-8">
+                 <%# Background element for the logo %>
+                <div class="main-content-background"></div>
+
+                <section class="bg-white rounded-lg shadow-xl p-6 mb-8 border-t-4 border-blue-600">
+                    <h2 class="text-3xl font-bold mb-4 text-blue-800"><%= video.title %></h2>
+                    <p class="text-gray-700 text-lg mb-4"><%= video.description %></p>
+
+                    <%# Display video player if user has access %>
+                    <% if (hasAccess && video.videoUrl) { %>
+                        <div class="relative w-full" style="padding-top: 56.25%;"> <%# 16:9 aspect ratio %>
+                            <iframe class="absolute top-0 left-0 w-full h-full rounded-md" src="<%= video.videoUrl %>" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                    <% } else if (user) { %>
+                         <%# Show purchase option if logged in but no access %>
+                        <div class="text-center mt-6">
+                            <p class="text-xl font-semibold mb-4">Price: £<%= video.price.toFixed(2) %></p>
+                            <form action="/videos/<%= video.id %>/purchase" method="POST">
+                                 <button type="submit" class="inline-block bg-yellow-500 hover:bg-yellow-600 text-blue-900 font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition duration-300 ease-in-out transform hover:-translate-y-1">
+                                    Purchase Access
+                                </button>
+                            </form>
+                             <%# Display purchase success message %>
+                             <% if (req.query.purchaseSuccess) { %>
+                                <p class="text-green-600 mt-4">Purchase successful! You now have access to this video.</p>
+                             <% } %>
+                              <%# Display purchase error message %>
+                             <% if (req.query.error) { %>
+                                <p class="text-red-600 mt-4"><%= req.query.error %></p>
+                             <% } %>
+                        </div>
+                    <% } else { %>
+                         <%# Show login/register message if not logged in %>
+                        <div class="text-center mt-6 p-4 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded-md shadow-sm">
+                            <p class="text-lg font-semibold mb-2">Price: £<%= video.price.toFixed(2) %></p>
+                            <p>Please <a href="/login" class="underline hover:text-yellow-900">log in</a> or <a href="/register" class="underline hover:text-yellow-900">register</a> to purchase and view this video.</p>
+                        </div>
+                    <% } %>
+
+                    <div class="mt-8">
+                         <a href="/videos" class="text-blue-600 hover:underline font-medium">&larr; Back to Videos</a>
+                    </div>
+
+                </section>
+
+            </main>
+
+            <footer class="bg-gray-900 text-gray-300 p-6 mt-12">
+                <div class="container mx-auto text-center text-sm">
+                    &copy; <%= new Date().getFullYear() %> Spirit of Youth Phoenix. All rights reserved.
+                    <div class="mt-2">
+                        <a href="#" class="text-gray-400 hover:text-white mx-2">Privacy Policy</a>
+                        <span class="text-gray-600">|</span>
+                        <a href="#" class="text-gray-400 hover:text-white mx-2">Terms of Service</a>
+                    </div>
+                </div>
+            </footer>
+        </body>
+        </html>

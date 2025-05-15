@@ -1,0 +1,75 @@
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Videos - Spirit of Youth Phoenix</title>
+                <script src="https://cdn.tailwindcss.com"></script>
+                <link rel="stylesheet" href="/style.css">
+            </head>
+            <body class="bg-blue-50 text-gray-800 leading-relaxed">
+                <header class="bg-gradient-to-r from-blue-700 to-blue-900 text-white p-3 shadow-lg border-b-4 border-yellow-400">
+                    <div class="container mx-auto flex items-center justify-between flex-wrap">
+                        <div class="flex items-center mb-2 md:mb-0">
+                            <img src="/logo.png" alt="Spirit of Youth Phoenix Team Logo" class="w-20 h-20 mr-3 rounded-full">
+                            <h1 class="text-3xl font-extrabold tracking-tight text-yellow-300 drop-shadow-md">Spirit of Youth Phoenix</h1>
+                        </div>
+                        <nav>
+                            <ul class="flex flex-wrap justify-center space-x-4 text-lg">
+                                <li><a href="/" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Home</a></li>
+                                <li><a href="/videos" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Videos</a></li>
+                                <%# Check if user is logged in %>
+                                <% if (user) { %>
+                                    <li><a href="/parent-area" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Parent Area</a></li>
+                                    <li><a href="/logout" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Logout (<%= user.username %>)</a></li>
+                                <% } else { %>
+                                    <li><a href="/login" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Login</a></li>
+                                    <li><a href="/register" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Register</a></li>
+                                <% } %>
+                            </ul>
+                        </nav>
+                    </div>
+                </header>
+
+                <main class="container mx-auto mt-8 p-4 md:px-8">
+                     <%# Background element for the logo %>
+                    <div class="main-content-background"></div>
+
+                    <section class="bg-white rounded-lg shadow-xl p-6 mb-8 border-t-4 border-blue-600">
+                        <h2 class="text-3xl font-bold mb-6 text-blue-800">Team Videos</h2>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <%# Loop through the videos data passed from the server %>
+                            <% videos.forEach(function(video){ %>
+                                <div class="border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition duration-300 ease-in-out">
+                                    <img src="<%= video.thumbnail %>" alt="<%= video.title %> Thumbnail" class="w-full h-40 object-cover">
+                                    <div class="p-4">
+                                        <h3 class="text-xl font-semibold mb-2 text-blue-700"><%= video.title %></h3>
+                                        <p class="text-gray-700 text-sm mb-3">Price: £<%= video.price.toFixed(2) %></p>
+                                        <a href="/videos/<%= video.id %>" class="inline-block bg-yellow-500 hover:bg-yellow-600 text-blue-900 font-bold py-2 px-4 rounded-md shadow-sm hover:shadow-md transition duration-300 ease-in-out">
+                                            View Details
+                                        </a>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        </div>
+
+                         <% if (videos.length === 0) { %>
+                            <p class="text-center text-gray-600">No videos available at the moment.</p>
+                        <% } %>
+                    </section>
+
+                </main>
+
+                <footer class="bg-gray-900 text-gray-300 p-6 mt-12">
+                    <div class="container mx-auto text-center text-sm">
+                        &copy; <%= new Date().getFullYear() %> Spirit of Youth Phoenix. All rights reserved.
+                        <div class="mt-2">
+                            <a href="#" class="text-gray-400 hover:text-white mx-2">Privacy Policy</a>
+                            <span class="text-gray-600">|</span>
+                            <a href="#" class="text-gray-400 hover:text-white mx-2">Terms of Service</a>
+                        </div>
+                    </div>
+                </footer>
+            </body>
+            </html>
