@@ -65,22 +65,36 @@ const db = new sqlite3.Database('./test.db', (err) => {
 
 
       // Optional: Insert some dummy data if tables are empty
-      // Check if users table is empty and insert a dummy user
+      // Check if users table is empty and insert a dummy user and a dummy coach
       db.get("SELECT COUNT(*) AS count FROM users", (err, row) => {
         if (err) {
           console.error('Error checking users table count:', err.message); // Added error logging
         } else if (row.count === 0) {
-          console.log("Users table is empty, inserting dummy user.");
-          // Hash a dummy password before inserting
-          bcrypt.hash('password123', 10, (err, hashedPassword) => {
+          console.log("Users table is empty, inserting dummy users.");
+          // Hash dummy passwords before inserting
+          bcrypt.hash('password123', 10, (err, parentHashedPassword) => {
             if (err) {
-              console.error('Error hashing dummy dummy password:', err); // Added error logging
+              console.error('Error hashing dummy parent password:', err);
             } else {
-              db.run("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ['dummy_parent', hashedPassword, 'parent'], function(err) {
+              db.run("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ['dummy_parent', parentHashedPassword, 'parent'], function(err) {
                 if (err) {
-                  console.error('Error inserting dummy user:', err.message); // Added error logging
+                  console.error('Error inserting dummy parent user:', err.message);
                 } else {
-                  console.log(`Dummy user inserted with ID: ${this.lastID}`);
+                  console.log(`Dummy parent user inserted with ID: ${this.lastID}`);
+                }
+              });
+            }
+          });
+
+           bcrypt.hash('coachpassword', 10, (err, coachHashedPassword) => {
+            if (err) {
+              console.error('Error hashing dummy coach password:', err);
+            } else {
+              db.run("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ['dummy_coach', coachHashedPassword, 'coach'], function(err) {
+                if (err) {
+                  console.error('Error inserting dummy coach user:', err.message);
+                } else {
+                  console.log(`Dummy coach user inserted with ID: ${this.lastID}`);
                 }
               });
             }
@@ -149,6 +163,17 @@ function isAuthenticated(req, res, next) {
   }
 }
 
+// Helper function to check if a user is a coach
+function isCoach(req, res, next) {
+    if (req.session.user && req.session.user.role === 'coach') {
+        next(); // User is a coach, proceed
+    } else {
+        // Redirect or send an unauthorized message
+        res.status(403).send('Unauthorized: You must be a coach to access this area.');
+    }
+}
+
+
 // --- Routes ---
 
 // Home Page
@@ -185,7 +210,12 @@ app.post('/login', (req, res) => {
     if (match) {
       // Passwords match, create a user session
       req.session.user = { id: user.id, username: user.username, role: user.role };
-      res.redirect('/parent-area'); // Redirect to a protected area
+      // Redirect based on role
+      if (user.role === 'coach') {
+          res.redirect('/coach-area');
+      } else {
+          res.redirect('/parent-area'); // Default redirect for parents
+      }
     } else {
       // Passwords don't match
       // Pass message as null to avoid ReferenceError
@@ -221,6 +251,7 @@ app.post('/register', (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Store the new user's information in the database
+    // New users default to 'parent' role
     db.run("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", [username, hashedPassword, 'parent'], function(err) {
       if (err) {
         console.error('Database error during user insertion:', err.message);
@@ -327,7 +358,36 @@ app.get('/parent-area', isAuthenticated, (req, res) => {
   res.render('parent_area', { user: req.session.user });
 });
 
+// Coach Area (Protected Route - only accessible if user is a coach)
+app.get('/coach-area', isAuthenticated, isCoach, (req, res) => {
+    // User is logged in and is a coach
+    res.render('coach_area', { user: req.session.user });
+});
+
+// Database Management Page (Protected Route - only accessible if user is a coach)
+app.get('/coach-area/db-manage', isAuthenticated, isCoach, (req, res) => {
+    // Fetch data from users and videos tables
+    db.all("SELECT id, username, role FROM users", (err, users) => {
+        if (err) {
+            console.error('Database error fetching users for manage page:', err.message);
+            users = []; // Provide empty array on error
+        }
+
+        db.all("SELECT id, title, price FROM videos", (err, videos) => {
+            if (err) {
+                console.error('Database error fetching videos for manage page:', err.message);
+                videos = []; // Provide empty array on error
+            }
+
+            // Render the database management page, passing the data
+            res.render('db_manage', { user: req.session.user, users: users, videos: videos });
+        });
+    });
+});
+
+
 // --- Add more routes for other pages (e.g., /schedule, /roster, /contact) ---
+// Remember to apply isAuthenticated and/or isCoach middleware as needed
 
 // Start the server
 app.listen(port, () => {
