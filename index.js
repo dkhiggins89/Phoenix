@@ -78,9 +78,10 @@ const db = new sqlite3.Database('./test.db', (err) => {
         } else if (row.count === 0) {
           console.log("Videos table is empty, inserting dummy videos.");
           const dummyVideos = [
-            { title: 'Match Highlights - Game 1', thumbnail: 'https://placehold.co/300x200?text=Video+1', price: 5.00, video_url: 'https://www.w3schools.com/html/mov_bbb.mp4' },
-            { title: 'Full Match - Game 1', thumbnail: 'https://placehold.co/300x200?text=Video+2', price: 10.00, video_url: 'https://www.w3schools.com/html/mov_bbb.mp4' },
-             { title: 'Training Session - Week 3', thumbnail: 'https://placehold.co/300x200?text=Video+3', price: 7.50, video_url: 'https://www.w3schools.com/html/mov_bbb.mp4' },
+            // Simplified video URLs
+            { title: 'Match Highlights - Game 1', thumbnail: 'https://placehold.co/300x200?text=Video+1', price: 5.00, video_url: '/videos/video1.mp4' },
+            { title: 'Full Match - Game 1', thumbnail: 'https://placehold.co/300x200?text=Video+2', price: 10.00, video_url: '/videos/video2.mp4' },
+             { title: 'Training Session - Week 3', thumbnail: 'https://placehold.co/300x200?text=Video+3', price: 7.50, video_url: '/videos/video3.mp4' },
           ];
           const stmt = db.prepare("INSERT INTO videos (title, thumbnail, price, video_url) VALUES (?, ?, ?, ?)");
           dummyVideos.forEach(video => {
