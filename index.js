@@ -72,6 +72,8 @@ const db = new sqlite3.Database('./test.db', (err) => {
       });
 
        // Check if videos table is empty and insert dummy videos
+       // TEMPORARILY COMMENTED OUT TO DEBUG SQLITE_ERROR
+       /*
        db.get("SELECT COUNT(*) AS count FROM videos", (err, row) => {
         if (err) {
           console.error('Error checking videos table count:', err.message);
@@ -92,6 +94,7 @@ const db = new sqlite3.Database('./test.db', (err) => {
           });
         }
       });
+      */
     });
   }
 });
