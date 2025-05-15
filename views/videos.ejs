@@ -8,28 +8,7 @@
                 <link rel="stylesheet" href="/style.css">
             </head>
             <body class="bg-blue-50 text-gray-800 leading-relaxed">
-                <header class="bg-gradient-to-r from-blue-700 to-blue-900 text-white p-3 shadow-lg border-b-4 border-yellow-400">
-                    <div class="container mx-auto flex items-center justify-between flex-wrap">
-                        <div class="flex items-center mb-2 md:mb-0">
-                            <img src="/logo.png" alt="Spirit of Youth Phoenix Team Logo" class="w-20 h-20 mr-3 rounded-full">
-                            <h1 class="text-3xl font-extrabold tracking-tight text-yellow-300 drop-shadow-md">Spirit of Youth Phoenix</h1>
-                        </div>
-                        <nav>
-                            <ul class="flex flex-wrap justify-center space-x-4 text-lg">
-                                <li><a href="/" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Home</a></li>
-                                <li><a href="/videos" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Videos</a></li>
-                                <%# Check if user is logged in %>
-                                <% if (user) { %>
-                                    <li><a href="/parent-area" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Parent Area</a></li>
-                                    <li><a href="/logout" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Logout (<%= user.username %>)</a></li>
-                                <% } else { %>
-                                    <li><a href="/login" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Login</a></li>
-                                    <li><a href="/register" class="hover:underline hover:text-yellow-300 transition duration-300 ease-in-out">Register</a></li>
-                                <% } %>
-                            </ul>
-                        </nav>
-                    </div>
-                </header>
+                <%- include('_header') %>
 
                 <main class="container mx-auto mt-8 p-4 md:px-8">
                      <%# Background element for the logo %>
