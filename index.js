@@ -2,7 +2,7 @@
 const express = require('express');
 const path = require('path');
 const session = require('express-session'); // For managing user sessions
-const sqlite3 = require('sqlite3').verbose(); // Import SQLite3
+const { Pool } = require('pg'); // Import the Pool class from pg
 const bcrypt = require('bcrypt'); // For secure password hashing
 
 // Initialize Express app
@@ -10,129 +10,117 @@ const app = express();
 // Use the PORT environment variable provided by the hosting platform, or default to 3000
 const port = process.env.PORT || 3000;
 
-// --- Database Setup (Using the provided SQLite code) ---
-// Use path.resolve to get an absolute path, might help with environment differences
-const dbPath = path.resolve(__dirname, 'test.db');
-console.log(`Attempting to open database at: ${dbPath}`); // Log the database path
+// --- Database Setup (Using PostgreSQL) ---
+// Use the DATABASE_URL environment variable provided by Render
+const databaseUrl = process.env.DATABASE_URL;
 
-const db = new sqlite3.Database(dbPath, (err) => {
+if (!databaseUrl) {
+  console.error('DATABASE_URL environment variable is not set.');
+  process.exit(1); // Exit if database URL is not configured
+}
+
+// Create a PostgreSQL connection pool
+const pool = new Pool({
+  connectionString: databaseUrl,
+  ssl: {
+    rejectUnauthorized: false // Required for connecting to Render's PostgreSQL from Node.js
+  }
+});
+
+// Connect to the database and initialize tables
+pool.connect((err, client, done) => {
   if (err) {
-    console.error('Error connecting to database:', err.message);
-    // Exit the process if database connection fails, as the app cannot run without it
+    console.error('Error connecting to the database:', err.message);
+    // Exit the process if database connection fails
     process.exit(1);
   } else {
-    console.log('Connected to the SQLite database.');
+    console.log('Connected to the PostgreSQL database.');
+
     // Initialize database tables if they don't exist
-    db.serialize(() => {
-      console.log('Starting database table check/creation...'); // Log before table creation
+    // Use async/await for cleaner table creation sequence
+    async function initializeDatabase() {
+      try {
+        console.log('Starting database table check/creation...');
 
-      // Create users table
-      db.run(`CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL, // Store hashed passwords
-        role TEXT DEFAULT 'parent'
-      )`, (err) => { // Added error logging for users table creation
-        if (err) {
-          console.error('Error creating users table:', err.message);
-        } else {
-          console.log('Users table checked/created.');
-        }
-      });
+        // Create users table
+        console.log('Attempting to create users table...');
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(255) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL, -- Store hashed passwords
+            role VARCHAR(50) DEFAULT 'parent'
+          );
+        `);
+        console.log('Users table checked/created.');
 
-      // Create videos table
-      db.run(`CREATE TABLE IF NOT EXISTS videos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        thumbnail TEXT, // URL to thumbnail image
-        price REAL REAL NOT NULL,
-        video_url TEXT // URL to the actual video file/stream
-      )`, (err) => { // Added error logging for videos table creation
-         if (err) {
-          console.error('Error creating videos table:', err.message);
-        } else {
-          console.log('Videos table checked/created.');
-        }
-      });
+        // Create videos table
+        console.log('Attempting to create videos table...');
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS videos (
+            id SERIAL PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            thumbnail VARCHAR(255), -- URL to thumbnail image
+            price DECIMAL(10, 2) NOT NULL,
+            video_url VARCHAR(255) -- URL to the actual video file/stream
+          );
+        `);
+        console.log('Videos table checked/created.');
 
-      // Create a table to track video purchases (Many-to-Many relationship)
-      db.run(`CREATE TABLE IF NOT EXISTS purchases (
-        user_id INTEGER,
-        video_id INTEGER,
-        purchase_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (user_id, video_id),
-        FOREIGN KEY (user_id) REFERENCES users(id),
-        FOREIGN KEY (video_id) REFERENCES videos(id)
-      )`, (err) => { // Added error logging for purchases table creation
-         if (err) {
-          console.error('Error creating purchases table:', err.message);
-        } else {
-          console.log('Purchases table checked/created.');
-        }
-      });
+        // Create a table to track video purchases (Many-to-Many relationship)
+        console.log('Attempting to create purchases table...');
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS purchases (
+            user_id INTEGER REFERENCES users(id),
+            video_id INTEGER REFERENCES videos(id),
+            purchase_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, video_id)
+          );
+        `);
+        console.log('Purchases table checked/created.');
 
+        console.log("Database table check/creation sequence complete.");
 
-      // Optional: Insert some dummy data if tables are empty
-      // Check if users table is empty and insert a dummy user and a dummy coach
-      db.get("SELECT COUNT(*) AS count FROM users", (err, row) => {
-        if (err) {
-          console.error('Error checking users table count:', err.message); // Added error logging
-        } else if (row.count === 0) {
+        // Optional: Insert some dummy data if tables are empty
+        // Check if users table is empty and insert a dummy user and a dummy coach
+        const userCountResult = await client.query("SELECT COUNT(*) AS count FROM users");
+        if (userCountResult.rows[0].count === '0') {
           console.log("Users table is empty, inserting dummy users.");
           // Hash dummy passwords before inserting
-          bcrypt.hash('password123', 10, (err, parentHashedPassword) => {
-            if (err) {
-              console.error('Error hashing dummy parent password:', err);
-            } else {
-              db.run("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ['dummy_parent', parentHashedPassword, 'parent'], function(err) {
-                if (err) {
-                  console.error('Error inserting dummy parent user:', err.message); // Added error logging
-                } else {
-                  console.log(`Dummy parent user inserted with ID: ${this.lastID}`);
-                }
-              });
-            }
-          });
+          const parentHashedPassword = await bcrypt.hash('password123', 10);
+          await client.query("INSERT INTO users (username, password, role) VALUES ($1, $2, $3)", ['dummy_parent', parentHashedPassword, 'parent']);
+          console.log('Dummy parent user inserted.');
 
-           bcrypt.hash('coachpassword', 10, (err, coachHashedPassword) => {
-            if (err) {
-              console.error('Error hashing dummy coach password:', err);
-            } else {
-              db.run("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ['dummy_coach', coachHashedPassword, 'coach'], function(err) {
-                if (err) {
-                  console.error('Error inserting dummy coach user:', err.message); // Added error logging
-                } else {
-                  console.log(`Dummy coach user inserted with ID: ${this.lastID}`);
-                }
-              });
-            }
-          });
+          const coachHashedPassword = await bcrypt.hash('coachpassword', 10);
+          await client.query("INSERT INTO users (username, password, role) VALUES ($1, $2, $3)", ['dummy_coach', coachHashedPassword, 'coach']);
+          console.log('Dummy coach user inserted.');
         }
-      });
 
-       // Check if videos table is empty and insert dummy videos
-       // Uncommented dummy video insertion
-       db.get("SELECT COUNT(*) AS count FROM videos", (err, row) => {
-        if (err) {
-          console.error('Error checking videos table count:', err.message); // Added error logging
-        } else if (row.count === 0) {
-          console.log("Videos table is empty, inserting dummy videos.");
-          const dummyVideos = [
-            // Reverted to original video URLs for testing
-            { title: 'Match Highlights - Game 1', thumbnail: 'https://placehold.co/300x200?text=Video+1', price: 5.00, video_url: 'https://www.w3schools.com/html/mov_bbb.mp4' },
-            { title: 'Full Match - Game 1', thumbnail: 'https://placehold.co/300x200?text=Video+2', price: 10.00, video_url: 'https://www.w3schools.com/html/mov_bbb.mp4' },
-             { title: 'Training Session - Week 3', thumbnail: 'https://placehold.co/300x200?text=Video+3', price: 7.50, video_url: 'https://www.w3schools.com/html/mov_bbb.mp4' },
-          ];
-          const stmt = db.prepare("INSERT INTO videos (title, thumbnail, price, video_url) VALUES (?, ?, ?, ?)");
-          dummyVideos.forEach(video => {
-            stmt.run(video.title, video.thumbnail, video.price, video.video_url);
-          });
-          stmt.finalize(() => {
-            console.log("Dummy videos inserted.");
-          });
-        }
-      });
-    });
+         // Check if videos table is empty and insert dummy videos
+         const videoCountResult = await client.query("SELECT COUNT(*) AS count FROM videos");
+         if (videoCountResult.rows[0].count === '0') {
+           console.log("Videos table is empty, inserting dummy videos.");
+           const dummyVideos = [
+             { title: 'Match Highlights - Game 1', thumbnail: 'https://placehold.co/300x200?text=Video+1', price: 5.00, video_url: 'https://www.w3schools.com/html/mov_bbb.mp4' },
+             { title: 'Full Match - Game 1', thumbnail: 'https://placehold.co/300x200?text=Video+2', price: 10.00, video_url: 'https://www.w3schools.com/html/mov_bbb.mp4' },
+              { title: 'Training Session - Week 3', thumbnail: 'https://placehold.co/300x200?text=Video+3', price: 7.50, video_url: 'https://www.w3schools.com/html/mov_bbb.mp4' },
+           ];
+           for (const video of dummyVideos) {
+             await client.query("INSERT INTO videos (title, thumbnail, price, video_url) VALUES ($1, $2, $3, $4)", [video.title, video.thumbnail, video.price, video.video_url]);
+           }
+           console.log("Dummy videos inserted.");
+         }
+
+      } catch (dbErr) {
+        console.error('Database initialization error:', dbErr.message);
+        // Consider exiting the process or implementing retry logic in production
+      } finally {
+        done(); // Release the client back to the pool
+      }
+    }
+
+    initializeDatabase(); // Run the async initialization function
+
   }
 });
 
@@ -153,7 +141,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'your_default_secret_change_this', // Set this in Replit Secrets or Render Environment Variables
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false } // Set to true if using HTTPS (Replit and Render provide HTTPS)
+  cookie: { secure: false } // Set to true if using HTTPS (Render provides HTTPS)
 }));
 
 // Set the view engine to EJS
@@ -193,21 +181,20 @@ app.get('/login', (req, res) => {
 });
 
 // Handle Login POST request
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => { // Made async to use await
   const { username, password } = req.body;
 
-  // Query the database to find the user by username
-  db.get("SELECT * FROM users WHERE username = ?", [username], async (err, user) => {
-    if (err) {
-      console.error('Database error during login:', err.message);
-      // Pass message as null to avoid ReferenceError
-      return res.render('login', { error: 'An error occurred during login.', message: null, user: req.session.user }); // Pass user session data
-    }
+  let client;
+  try {
+    client = await pool.connect(); // Get a client from the pool
+
+    // Query the database to find the user by username
+    const userResult = await client.query("SELECT * FROM users WHERE username = $1", [username]);
+    const user = userResult.rows[0]; // Get the first row
 
     if (!user) {
       // User not found
-      // Pass message as null to avoid ReferenceError
-      return res.render('login', { error: 'Invalid username or password.', message: null, user: req.session.user }); // Pass user session data
+      return res.render('login', { error: 'Invalid username or password.', message: null, user: req.session.user });
     }
 
     // Compare the submitted password with the hashed password from the database
@@ -224,10 +211,16 @@ app.post('/login', (req, res) => {
       }
     } else {
       // Passwords don't match
-      // Pass message as null to avoid ReferenceError
-      res.render('login', { error: 'Invalid username or password.', message: null, user: req.session.user }); // Pass user session data
+      res.render('login', { error: 'Invalid username or password.', message: null, user: req.session.user });
     }
-  });
+  } catch (dbErr) {
+    console.error('Database error during login:', dbErr.message);
+    res.render('login', { error: 'An error occurred during login.', message: null, user: req.session.user });
+  } finally {
+    if (client) {
+      client.release(); // Release the client back to the pool
+    }
+  }
 });
 
 // Registration Page
@@ -236,21 +229,20 @@ app.get('/register', (req, res) => {
 });
 
 // Handle Registration POST request
-app.post('/register', (req, res) => {
+app.post('/register', async (req, res) => { // Made async to use await
   const { username, password } = req.body;
 
-  // Check if the username already exists
-  db.get("SELECT * FROM users WHERE username = ?", [username], async (err, existingUser) => {
-    if (err) {
-      console.error('Database error during registration check:', err.message);
-      // Pass message as null to avoid ReferenceError
-      return res.render('register', { error: 'An error occurred during registration.', message: null, user: req.session.user }); // Pass user session data
-    }
+  let client;
+  try {
+    client = await pool.connect(); // Get a client from the pool
+
+    // Check if the username already exists
+    const existingUserResult = await client.query("SELECT * FROM users WHERE username = $1", [username]);
+    const existingUser = existingUserResult.rows[0];
 
     if (existingUser) {
       // Username already exists
-      // Pass message as null to avoid ReferenceError
-      return res.render('register', { error: 'Username already exists.', message: null, user: req.session.user }); // Pass user session data
+      return res.render('register', { error: 'Username already exists.', message: null, user: req.session.user });
     }
 
     // Securely hash the password
@@ -258,16 +250,18 @@ app.post('/register', (req, res) => {
 
     // Store the new user's information in the database
     // New users default to 'parent' role
-    db.run("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", [username, hashedPassword, 'parent'], function(err) {
-      if (err) {
-        console.error('Database error during user insertion:', err.message);
-        // Pass message as null to avoid ReferenceError
-        return res.render('register', { error: 'An error occurred during registration.', message: null, user: req.session.user }); // Pass user session data
-      }
-      console.log(`User registered with ID: ${this.lastID}`);
-      res.redirect('/login?message=Registration successful! Please log in.');
-    });
-  });
+    await client.query("INSERT INTO users (username, password, role) VALUES ($1, $2, $3)", [username, hashedPassword, 'parent']);
+    console.log(`User registered: ${username}`);
+    res.redirect('/login?message=Registration successful! Please log in.');
+
+  } catch (dbErr) {
+    console.error('Database error during registration:', dbErr.message);
+    res.render('register', { error: 'An error occurred during registration.', message: null, user: req.session.user });
+  } finally {
+    if (client) {
+      client.release(); // Release the client back to the pool
+    }
+  }
 });
 
 // Logout Route
@@ -282,27 +276,35 @@ app.get('/logout', (req, res) => {
 
 
 // Videos Page (Publicly accessible to list videos)
-app.get('/videos', (req, res) => {
-    // Fetch video list from database
-    db.all("SELECT * FROM videos", (err, videos) => {
-        if (err) {
-            console.error('Database error fetching videos:', err.message);
-            return res.status(500).send("Error loading videos.");
-        }
+app.get('/videos', async (req, res) => { // Made async to use await
+    let client;
+    try {
+        client = await pool.connect(); // Get a client from the pool
+        // Fetch video list from database
+        const videoResult = await client.query("SELECT * FROM videos");
+        const videos = videoResult.rows;
         res.render('videos', { videos: videos, user: req.session.user });
-    });
+    } catch (dbErr) {
+        console.error('Database error fetching videos:', dbErr.message);
+        res.status(500).send("Error loading videos.");
+    } finally {
+        if (client) {
+            client.release(); // Release the client back to the pool
+        }
+    }
 });
 
 // Video Detail/Purchase Page
-app.get('/videos/:id', (req, res) => {
+app.get('/videos/:id', async (req, res) => { // Made async to use await
     const videoId = req.params.id;
+    let client;
+    try {
+        client = await pool.connect(); // Get a client from the pool
 
-    // Fetch specific video details from database
-    db.get("SELECT * FROM videos WHERE id = ?", [videoId], (err, video) => {
-        if (err) {
-            console.error('Database error fetching video detail:', err.message);
-            return res.status(500).send("Error loading video details.");
-        }
+        // Fetch specific video details from database
+        const videoResult = await client.query("SELECT * FROM videos WHERE id = $1", [videoId]);
+        const video = videoResult.rows[0];
+
         if (!video) {
             return res.status(404).send("Video not found.");
         }
@@ -310,25 +312,26 @@ app.get('/videos/:id', (req, res) => {
         // Check if user is logged in and has purchased the video
         let hasAccess = false;
         if (req.session.user) {
-            db.get("SELECT 1 FROM purchases WHERE user_id = ? AND video_id = ?", [req.session.user.id, videoId], (err, purchase) => {
-                if (err) {
-                    console.error('Database error checking purchase:', err.message);
-                    // Continue without access if database error occurs
-                } else if (purchase) {
-                    hasAccess = true;
-                }
-                 // Render the video detail page
-                res.render('video_detail', { video: video, user: req.session.user, hasAccess: hasAccess });
-            });
-        } else {
-             // Render the video detail page for non-logged in users (no access)
-            res.render('video_detail', { video: video, user: req.session.user, hasAccess: hasAccess });
+            const purchaseResult = await client.query("SELECT 1 FROM purchases WHERE user_id = $1 AND video_id = $2", [req.session.user.id, videoId]);
+            if (purchaseResult.rows.length > 0) {
+                hasAccess = true;
+            }
         }
-    });
+         // Render the video detail page
+        res.render('video_detail', { video: video, user: req.session.user, hasAccess: hasAccess });
+
+    } catch (dbErr) {
+        console.error('Database error fetching video detail:', dbErr.message);
+        res.status(500).send("Error loading video details.");
+    } finally {
+        if (client) {
+            client.release(); // Release the client back to the pool
+        }
+    }
 });
 
 // Handle Video Purchase (Placeholder - requires payment gateway integration)
-app.post('/videos/:id/purchase', isAuthenticated, (req, res) => {
+app.post('/videos/:id/purchase', isAuthenticated, async (req, res) => { // Made async to use await
     const videoId = req.params.id;
     const userId = req.session.user.id; // User ID is available because of isAuthenticated middleware
 
@@ -342,19 +345,25 @@ app.post('/videos/:id/purchase', isAuthenticated, (req, res) => {
 
     console.log(`User ${userId} attempting to purchase video ${videoId}`);
 
-    // --- Simulate successful purchase for demo (replace with real payment logic) ---
-    // For a real purchase, you'd use a payment gateway API here.
-    // After successful payment, insert into the purchases table:
-    db.run("INSERT OR IGNORE INTO purchases (user_id, video_id) VALUES (?, ?)", [userId, videoId], function(err) {
-        if (err) {
-            console.error('Database error recording purchase:', err.message);
-            // Handle error, maybe redirect with an error message
-            return res.redirect(`/videos/${videoId}?error=Purchase failed`);
-        }
+    let client;
+    try {
+        client = await pool.connect(); // Get a client from the pool
+        // --- Simulate successful purchase for demo (replace with real payment logic) ---
+        // For a real purchase, you'd use a payment gateway API here.
+        // After successful payment, insert into the purchases table:
+        await client.query("INSERT INTO purchases (user_id, video_id) VALUES ($1, $2) ON CONFLICT (user_id, video_id) DO NOTHING", [userId, videoId]);
         console.log(`Simulated successful purchase recorded for user ${userId} and video ${videoId}`);
         res.redirect(`/videos/${videoId}?purchaseSuccess=true`);
-    });
-    // --- End Simulation ---
+
+    } catch (dbErr) {
+        console.error('Database error recording purchase:', dbErr.message);
+        // Handle error, maybe redirect with an error message
+        res.redirect(`/videos/${videoId}?error=Purchase failed`);
+    } finally {
+        if (client) {
+            client.release(); // Release the client back to the pool
+        }
+    }
 });
 
 
@@ -371,24 +380,28 @@ app.get('/coach-area', isAuthenticated, isCoach, (req, res) => {
 });
 
 // Database Management Page (Protected Route - only accessible if user is a coach)
-app.get('/coach-area/db-manage', isAuthenticated, isCoach, (req, res) => {
-    // Fetch data from users and videos tables
-    db.all("SELECT id, username, role FROM users", (err, users) => {
-        if (err) {
-            console.error('Database error fetching users for manage page:', err.message);
-            users = []; // Provide empty array on error
+app.get('/coach-area/db-manage', isAuthenticated, isCoach, async (req, res) => { // Made async to use await
+    let client;
+    try {
+        client = await pool.connect(); // Get a client from the pool
+        // Fetch data from users and videos tables
+        const usersResult = await client.query("SELECT id, username, role FROM users");
+        const users = usersResult.rows;
+
+        const videosResult = await client.query("SELECT id, title, price FROM videos");
+        const videos = videosResult.rows;
+
+        // Render the database management page, passing the data
+        res.render('db_manage', { user: req.session.user, users: users, videos: videos });
+    } catch (dbErr) {
+        console.error('Database error fetching data for manage page:', dbErr.message);
+        // Render with empty arrays and an error message
+        res.render('db_manage', { user: req.session.user, users: [], videos: [], error: 'Error loading database data.' });
+    } finally {
+        if (client) {
+            client.release(); // Release the client back to the pool
         }
-
-        db.all("SELECT id, title, price FROM videos", (err, videos) => {
-            if (err) {
-                console.error('Database error fetching videos for manage page:', err.message);
-                videos = []; // Provide empty array on error
-            }
-
-            // Render the database management page, passing the data
-            res.render('db_manage', { user: req.session.user, users: users, videos: videos });
-        });
-    });
+    }
 });
 
 
@@ -400,6 +413,5 @@ app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}/`);
 });
 
-// Note: Graceful database closing on server shutdown is more complex in environments like Replit.
-// For development, keeping the connection open is generally fine.
-// In a production environment, you'd add signal handlers (SIGINT, SIGTERM) to close the DB.
+// Note: Graceful database closing on server shutdown is more complex in environments like Render.
+// Render manages database connections for you with the Pool.
