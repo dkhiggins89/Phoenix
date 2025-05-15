@@ -24,7 +24,13 @@ const db = new sqlite3.Database('./test.db', (err) => {
         username TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL, // Store hashed passwords
         role TEXT DEFAULT 'parent'
-      )`);
+      )`, (err) => { // Added error logging for users table creation
+        if (err) {
+          console.error('Error creating users table:', err.message);
+        } else {
+          console.log('Users table checked/created.');
+        }
+      });
 
       // Create videos table
       db.run(`CREATE TABLE IF NOT EXISTS videos (
@@ -33,7 +39,13 @@ const db = new sqlite3.Database('./test.db', (err) => {
         thumbnail TEXT, // URL to thumbnail image
         price REAL NOT NULL,
         video_url TEXT // URL to the actual video file/stream
-      )`);
+      )`, (err) => { // Added error logging for videos table creation
+         if (err) {
+          console.error('Error creating videos table:', err.message);
+        } else {
+          console.log('Videos table checked/created.');
+        }
+      });
 
       // Create a table to track video purchases (Many-to-Many relationship)
       db.run(`CREATE TABLE IF NOT EXISTS purchases (
@@ -43,25 +55,30 @@ const db = new sqlite3.Database('./test.db', (err) => {
         PRIMARY KEY (user_id, video_id),
         FOREIGN KEY (user_id) REFERENCES users(id),
         FOREIGN KEY (video_id) REFERENCES videos(id)
-      )`);
+      )`, (err) => { // Added error logging for purchases table creation
+         if (err) {
+          console.error('Error creating purchases table:', err.message);
+        } else {
+          console.log('Purchases table checked/created.');
+        }
+      });
 
-      console.log("Database tables checked/created.");
 
       // Optional: Insert some dummy data if tables are empty
       // Check if users table is empty and insert a dummy user
       db.get("SELECT COUNT(*) AS count FROM users", (err, row) => {
         if (err) {
-          console.error('Error checking users table count:', err.message);
+          console.error('Error checking users table count:', err.message); // Added error logging
         } else if (row.count === 0) {
           console.log("Users table is empty, inserting dummy user.");
           // Hash a dummy password before inserting
           bcrypt.hash('password123', 10, (err, hashedPassword) => {
             if (err) {
-              console.error('Error hashing dummy password:', err);
+              console.error('Error hashing dummy dummy password:', err); // Added error logging
             } else {
               db.run("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ['dummy_parent', hashedPassword, 'parent'], function(err) {
                 if (err) {
-                  console.error('Error inserting dummy user:', err.message);
+                  console.error('Error inserting dummy user:', err.message); // Added error logging
                 } else {
                   console.log(`Dummy user inserted with ID: ${this.lastID}`);
                 }
