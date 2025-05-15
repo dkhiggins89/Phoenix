@@ -37,7 +37,7 @@ const db = new sqlite3.Database('./test.db', (err) => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         thumbnail TEXT, // URL to thumbnail image
-        price REAL NOT NULL,
+        price REAL REAL NOT NULL,
         video_url TEXT // URL to the actual video file/stream
       )`, (err) => { // Added error logging for videos table creation
          if (err) {
@@ -158,7 +158,7 @@ app.get('/', (req, res) => {
 
 // Login Page
 app.get('/login', (req, res) => {
-  res.render('login', { error: null, message: req.query.message });
+  res.render('login', { error: null, message: req.query.message, user: req.session.user }); // Pass user session data
 });
 
 // Handle Login POST request
@@ -170,13 +170,13 @@ app.post('/login', (req, res) => {
     if (err) {
       console.error('Database error during login:', err.message);
       // Pass message as null to avoid ReferenceError
-      return res.render('login', { error: 'An error occurred during login.', message: null });
+      return res.render('login', { error: 'An error occurred during login.', message: null, user: req.session.user }); // Pass user session data
     }
 
     if (!user) {
       // User not found
       // Pass message as null to avoid ReferenceError
-      return res.render('login', { error: 'Invalid username or password.', message: null });
+      return res.render('login', { error: 'Invalid username or password.', message: null, user: req.session.user }); // Pass user session data
     }
 
     // Compare the submitted password with the hashed password from the database
@@ -189,14 +189,14 @@ app.post('/login', (req, res) => {
     } else {
       // Passwords don't match
       // Pass message as null to avoid ReferenceError
-      res.render('login', { error: 'Invalid username or password.', message: null });
+      res.render('login', { error: 'Invalid username or password.', message: null, user: req.session.user }); // Pass user session data
     }
   });
 });
 
 // Registration Page
 app.get('/register', (req, res) => {
-  res.render('register', { error: null, message: req.query.message });
+  res.render('register', { error: null, message: req.query.message, user: req.session.user }); // Pass user session data
 });
 
 // Handle Registration POST request
@@ -208,13 +208,13 @@ app.post('/register', (req, res) => {
     if (err) {
       console.error('Database error during registration check:', err.message);
       // Pass message as null to avoid ReferenceError
-      return res.render('register', { error: 'An error occurred during registration.', message: null });
+      return res.render('register', { error: 'An error occurred during registration.', message: null, user: req.session.user }); // Pass user session data
     }
 
     if (existingUser) {
       // Username already exists
       // Pass message as null to avoid ReferenceError
-      return res.render('register', { error: 'Username already exists.', message: null });
+      return res.render('register', { error: 'Username already exists.', message: null, user: req.session.user }); // Pass user session data
     }
 
     // Securely hash the password
@@ -225,7 +225,7 @@ app.post('/register', (req, res) => {
       if (err) {
         console.error('Database error during user insertion:', err.message);
         // Pass message as null to avoid ReferenceError
-        return res.render('register', { error: 'An error occurred during registration.', message: null });
+        return res.render('register', { error: 'An error occurred during registration.', message: null, user: req.session.user }); // Pass user session data
       }
       console.log(`User registered with ID: ${this.lastID}`);
       res.redirect('/login?message=Registration successful! Please log in.');
