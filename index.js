@@ -11,13 +11,21 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // --- Database Setup (Using the provided SQLite code) ---
-const db = new sqlite3.Database('./test.db', (err) => {
+// Use path.resolve to get an absolute path, might help with environment differences
+const dbPath = path.resolve(__dirname, 'test.db');
+console.log(`Attempting to open database at: ${dbPath}`); // Log the database path
+
+const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Error connecting to database:', err.message);
+    // Exit the process if database connection fails, as the app cannot run without it
+    process.exit(1);
   } else {
     console.log('Connected to the SQLite database.');
     // Initialize database tables if they don't exist
     db.serialize(() => {
+      console.log('Starting database table check/creation...'); // Log before table creation
+
       // Create users table
       db.run(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -78,7 +86,7 @@ const db = new sqlite3.Database('./test.db', (err) => {
             } else {
               db.run("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ['dummy_parent', parentHashedPassword, 'parent'], function(err) {
                 if (err) {
-                  console.error('Error inserting dummy parent user:', err.message);
+                  console.error('Error inserting dummy parent user:', err.message); // Added error logging
                 } else {
                   console.log(`Dummy parent user inserted with ID: ${this.lastID}`);
                 }
@@ -92,7 +100,7 @@ const db = new sqlite3.Database('./test.db', (err) => {
             } else {
               db.run("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ['dummy_coach', coachHashedPassword, 'coach'], function(err) {
                 if (err) {
-                  console.error('Error inserting dummy coach user:', err.message);
+                  console.error('Error inserting dummy coach user:', err.message); // Added error logging
                 } else {
                   console.log(`Dummy coach user inserted with ID: ${this.lastID}`);
                 }
@@ -103,18 +111,17 @@ const db = new sqlite3.Database('./test.db', (err) => {
       });
 
        // Check if videos table is empty and insert dummy videos
-       // TEMPORARILY COMMENTED OUT TO DEBUG SQLITE_ERROR
-       /*
+       // Uncommented dummy video insertion
        db.get("SELECT COUNT(*) AS count FROM videos", (err, row) => {
         if (err) {
-          console.error('Error checking videos table count:', err.message);
+          console.error('Error checking videos table count:', err.message); // Added error logging
         } else if (row.count === 0) {
           console.log("Videos table is empty, inserting dummy videos.");
           const dummyVideos = [
-            // Simplified video URLs
-            { title: 'Match Highlights - Game 1', thumbnail: 'https://placehold.co/300x200?text=Video+1', price: 5.00, video_url: '/videos/video1.mp4' },
-            { title: 'Full Match - Game 1', thumbnail: 'https://placehold.co/300x200?text=Video+2', price: 10.00, video_url: '/videos/video2.mp4' },
-             { title: 'Training Session - Week 3', thumbnail: 'https://placehold.co/300x200?text=Video+3', price: 7.50, video_url: '/videos/video3.mp4' },
+            // Reverted to original video URLs for testing
+            { title: 'Match Highlights - Game 1', thumbnail: 'https://placehold.co/300x200?text=Video+1', price: 5.00, video_url: 'https://www.w3schools.com/html/mov_bbb.mp4' },
+            { title: 'Full Match - Game 1', thumbnail: 'https://placehold.co/300x200?text=Video+2', price: 10.00, video_url: 'https://www.w3schools.com/html/mov_bbb.mp4' },
+             { title: 'Training Session - Week 3', thumbnail: 'https://placehold.co/300x200?text=Video+3', price: 7.50, video_url: 'https://www.w3schools.com/html/mov_bbb.mp4' },
           ];
           const stmt = db.prepare("INSERT INTO videos (title, thumbnail, price, video_url) VALUES (?, ?, ?, ?)");
           dummyVideos.forEach(video => {
@@ -125,7 +132,6 @@ const db = new sqlite3.Database('./test.db', (err) => {
           });
         }
       });
-      */
     });
   }
 });
