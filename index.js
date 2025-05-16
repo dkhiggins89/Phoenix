@@ -103,6 +103,21 @@ pool.connect((err, client, done) => {
             description TEXT
           );
         `);
+
+        // Add youtube_url column to training_drills if it doesn't exist
+await client.query(`
+  DO $$
+  BEGIN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns 
+      WHERE table_name='training_drills' AND column_name='youtube_url'
+    ) THEN
+      ALTER TABLE training_drills ADD COLUMN youtube_url VARCHAR(255);
+    END IF;
+  END;
+  $$;
+`);
+
         console.log('training_drills table checked/created.');
 
         console.log("Database table check/creation sequence complete.");
