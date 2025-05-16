@@ -189,6 +189,40 @@ app.post('/coach-area/training_plan', isAuthenticated, isCoach, async (req, res)
   }
 });
 
+app.get('/coach-area/training_plan/archive', isAuthenticated, isCoach, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(`
+      SELECT ts.id, ts.session_date, ts.location, ts.notes,
+        COALESCE(json_agg(json_build_object(
+          'id', td.id,
+          'drill_name', td.drill_name,
+          'duration_minutes', td.duration_minutes,
+          'description', td.description,
+          'youtube_url', td.youtube_url,
+          'completed', td.completed
+        )) FILTER (WHERE td.id IS NOT NULL AND td.completed = TRUE), '[]') AS drills
+      FROM training_sessions ts
+      LEFT JOIN training_drills td ON ts.id = td.session_id
+      GROUP BY ts.id
+      ORDER BY ts.session_date DESC;
+    `);
+
+    // Filter out sessions with no completed drills
+    const archivedSessions = result.rows.filter(
+      session => Array.isArray(session.drills) && session.drills.length > 0
+    );
+
+    res.render('coach-area/training_archive', {
+      user: req.session.user,
+      archivedSessions
+    });
+  } finally {
+    client.release();
+  }
+});
+
+
 // Drill routes
 
 // Delete drill
