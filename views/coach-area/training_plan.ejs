@@ -32,9 +32,11 @@
         </div>
       <% } %>
 
-      <% trainingSessions.forEach(session => {
-     if (!Array.isArray(session.drills) || session.drills.length === 0 || session.drills[0].id === null) return;
+<% trainingSessions.forEach(session => {
+     const activeDrills = session.drills.filter(d => !d.completed);
+     if (activeDrills.length === 0) return;
 %>
+
         <div class="mb-6 border border-gray-200 rounded-lg shadow p-4 bg-white">
           <h3 class="text-xl font-semibold text-blue-700 mb-2">
             <%= new Date(session.session_date).toLocaleDateString('en-GB') %> — <%= session.location %>
@@ -44,7 +46,7 @@
           <% if (Array.isArray(session.drills) && session.drills.length > 0 && session.drills[0].id !== null) { %>
             <h4 class="font-bold mt-3 text-blue-600">Drills:</h4>
             <ul class="mt-2 space-y-2">
-              <% session.drills.forEach(drill => { %>
+              <% activeDrills.forEach(drill => { %>
                 <li class="p-3 bg-gray-50 border rounded flex flex-col md:flex-row justify-between items-start md:items-center">
                   <div class="flex-1">
                     <p class="text-sm font-medium text-gray-800">
