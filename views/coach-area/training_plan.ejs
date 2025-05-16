@@ -1,114 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Training Plan - Spirit of Youth Phoenix</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Training Plan</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/style.css"/>
 </head>
-<body class="bg-blue-50 text-gray-800 leading-relaxed">
-
+<body class="bg-blue-50 text-gray-800">
   <%- include('../_header') %>
-
-
-  <main class="container mx-auto mt-8 p-4 md:px-8">
-    <div class="main-content-background"></div>
-    <section class="bg-white rounded-lg shadow-xl p-6 mb-8 border-t-4 border-blue-600">
-
-<div class="max-w-5xl mx-auto p-4">
-  <h1 class="text-3xl font-bold mb-6">Training Plan</h1>
-
-  <% if (message) { %>
-    <div class="bg-green-100 text-green-800 p-3 rounded mb-4">
-      <%= message %>
-    </div>
-  <% } %>
-  <% if (error) { %>
-    <div class="bg-red-100 text-red-800 p-3 rounded mb-4">
-      <%= error %>
-    </div>
-  <% } %>
-
-<form action="/coach-area/training_plan" method="POST" class="mb-8 space-y-4">
-  <div>
-    <label for="session_date" class="block font-semibold mb-1">Session Date</label>
-    <input type="date" name="session_date" id="session_date" required class="w-full border rounded p-2" />
-  </div>
-
-  <div>
-    <label for="location" class="block font-semibold mb-1">Location</label>
-    <input type="text" name="location" id="location" required class="w-full border rounded p-2" />
-  </div>
-
-  <div>
-    <label for="notes" class="block font-semibold mb-1">Notes</label>
-    <textarea name="notes" id="notes" class="w-full border rounded p-2" rows="3"></textarea>
-  </div>
-
-  <div>
-    <label for="youtube_url" class="block font-semibold mb-1">YouTube Video URL (optional)</label>
-    <input type="url" name="youtube_url" id="youtube_url" placeholder="https://www.youtube.com/watch?v=..." class="w-full border rounded p-2" />
-  </div>
-
-  <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Add Training Plan</button>
-</form>
-
-  <% if (trainingSessions.length === 0) { %>
-    <p class="text-gray-700">No training sessions available yet.</p>
-  <% } else { %>
-    <% trainingSessions.forEach(session => { %>
-      <div class="mb-6 bg-white shadow rounded-xl p-4">
-        <h2 class="text-xl font-semibold mb-1">
-          <%= session.session_date ? new Date(session.session_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Unknown date' %>
-          — <%= session.location %>
-        </h2>
-        <p class="text-gray-700 mb-3"><%= session.notes %></p>
-
-        <% if (Array.isArray(session.drills) && session.drills.length > 0 && session.drills[0].id !== null) { %>
-          <ul class="list-disc pl-6 space-y-2">
-            <% session.drills.forEach(drill => { %>
-  <li class="mb-4">
-    <strong><%= drill.drill_name %></strong>
-    <% if (drill.youtube_url) { %>
-      <% 
-        // Extract YouTube video ID from URL
-        const urlParts = drill.youtube_url.split('v=');
-        const videoId = urlParts.length > 1 ? urlParts[1].split('&')[0] : null;
-      %>
-      <% if (videoId) { %>
-        <div class="mt-2">
-          <iframe class="w-full max-w-md aspect-video rounded" src="https://www.youtube.com/embed/<%= videoId %>" frameborder="0" allowfullscreen></iframe>
-        </div>
-      <% } else { %>
-        <p><a href="<%= drill.youtube_url %>" target="_blank" class="text-blue-600 underline">Watch Video</a></p>
-      <% } %>
-    <% } else { %>
-      <p><%= drill.description %></p>
-    <% } %>
-  </li>
-<% }); %>
-          </ul>
-        <% } else { %>
-          <p class="text-sm text-gray-500">No drills added to this session yet.</p>
-        <% } %>
-      </div>
+  <main class="container mx-auto p-4">
+    <button id="toggleArchive" class="bg-gray-200 px-3 py-1 rounded mb-4">Toggle Completed Drills</button>
+    <% trainingSessions.forEach(session=>{ %>
+      <section class="mb-8 bg-white p-4 rounded shadow">
+        <h3><%= new Date(session.session_date).toLocaleDateString() %> - <%= session.location %></h3>
+        <p><%= session.notes %></p>
+        <% const incomplete = session.drills.filter(d=>!d.completed); const completed = session.drills.filter(d=>d.completed); %>
+        <ul>
+          <% incomplete.forEach(drill=>{ %>
+            <li class="mb-2 border p-2">
+              <%= drill.drill_name %>
+              <div class="space-x-2 inline">
+                <form action="/coach-area/drills/<%= drill.id %>/complete" method="POST"><button>Complete</button></form>
+                <a href="/coach-area/drills/<%= drill.id %>/edit">Edit</a>
+                <form action="/coach-area/drills/<%= drill.id %>/delete" method="POST"><button>Delete</button></form>
+              </div>
+            </li>
+          <% }) %>
+        </ul>
+        <h4>Completed</h4>
+        <ul id="archiveList">
+          <% completed.forEach(drill=>{ %>
+            <li class="mb-2 border p-2 line-through"><%= drill.drill_name %></li>
+          <% }) %>
+        </ul>
+      </section>
     <% }); %>
-  <% } %>
-</div>
-    </section>
   </main>
-
-  <footer class="bg-gray-900 text-gray-300 p-6 mt-12">
-    <div class="container mx-auto text-center text-sm">
-      &copy; <%= new Date().getFullYear() %> Spirit of Youth Phoenix. All rights reserved.
-      <div class="mt-2">
-        <a href="#" class="text-gray-400 hover:text-white mx-2">Privacy Policy</a>
-        <span class="text-gray-600">|</span>
-        <a href="#" class="text-gray-400 hover:text-white mx-2">Terms of Service</a>
-      </div>
-    </div>
-  </footer>
-
+  <script>
+    const toggleBtn = document.getElementById('toggleArchive');
+    const archiveList = document.getElementById('archiveList');
+    toggleBtn.onclick = () => { archiveList.classList.toggle('hidden'); };
+  </script>
 </body>
 </html>

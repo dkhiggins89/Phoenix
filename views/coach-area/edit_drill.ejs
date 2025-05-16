@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html><head><title>Edit Drill</title></head><body>
+  <%- include('../_header') %>
+  <form action="/coach-area/drills/<%= drill.id %>/edit" method="POST">
+    <label>Name<input name="drill_name" value="<%= drill.drill_name %>"/></label>
+    <label>Duration<input name="duration_minutes" value="<%= drill.duration_minutes %>"/></label>
+    <label>Description<textarea name="description"><%= drill.description %></textarea></label>
+    <label>YouTube URL<input name="youtube_url" value="<%= drill.youtube_url %>"/></label>
+    <button type="submit">Save</button>
+  </form>
+</body></html>
