@@ -102,7 +102,7 @@ pool.connect((err, client, done) => {
            console.log("Videos table is empty, inserting dummy videos.");
            const dummyVideos = [
              { title: 'Match Highlights - Game 1', thumbnail: 'https://placehold.co/300x200?text=Video+1', price: 5.00, video_url: 'https://www.w3schools.com/html/mov_bbb.mp4' },
-             { title: 'Full Match - Game 1', thumbnail: 'https://placehold.co/300x200?text=Video+2', price: 10.00, video_url: 'https://www.w3schools.com/html/mov_bbb.mp4' },
+             { title: 'Full Match - Game 1', thumbnail: 'https://www.w3schools.com/html/mov_bbb.mp4', price: 10.00, video_url: 'https://www.w3schools.com/html/mov_bbb.mp4' },
               { title: 'Training Session - Week 3', thumbnail: 'https://placehold.co/300x200?text=Video+3', price: 7.50, video_url: 'https://www.w3schools.com/html/mov_bbb.mp4' },
            ];
            for (const video of dummyVideos) {
@@ -383,23 +383,31 @@ app.get('/coach-area', isAuthenticated, isCoach, (req, res) => {
 app.get('/coach-area/db-manage', isAuthenticated, isCoach, async (req, res) => { // Made async to use await
     let client;
     try {
+        console.log('Attempting to connect to database for db-manage page...'); // Log before connection
         client = await pool.connect(); // Get a client from the pool
-        // Fetch data from users and videos tables
+        console.log('Database client connected for db-manage page.'); // Log after successful connection
+
+        console.log('Attempting to fetch users for db-manage page...'); // Log before fetching users
         const usersResult = await client.query("SELECT id, username, role FROM users");
         const users = usersResult.rows;
+        console.log(`Fetched ${users.length} users for db-manage page.`); // Log user count
 
+        console.log('Attempting to fetch videos for db-manage page...'); // Log before fetching videos
         const videosResult = await client.query("SELECT id, title, price FROM videos");
         const videos = videosResult.rows;
+        console.log(`Fetched ${videos.length} videos for db-manage page.`); // Log video count
 
+        console.log('Rendering db_manage page...'); // Log before rendering
         // Render the database management page, passing the data
         res.render('db_manage', { user: req.session.user, users: users, videos: videos, message: req.query.message, error: req.query.error }); // Pass messages/errors
     } catch (dbErr) {
-        console.error('Database error fetching data for manage page:', dbErr.message);
+        console.error('Database error fetching data for manage page:', dbErr); // Log the full error object
         // Render with empty arrays and an error message
-        res.render('db_manage', { user: req.session.user, users: [], videos: [], error: 'Error loading database data.' });
+        res.render('db_manage', { user: req.session.user, users: [], videos: [], error: 'Error loading database data: ' + dbErr.message }); // Display error message on page
     } finally {
         if (client) {
             client.release(); // Release the client back to the pool
+            console.log('Database client released for db-manage page.'); // Log after release
         }
     }
 });
