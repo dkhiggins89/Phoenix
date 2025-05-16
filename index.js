@@ -108,6 +108,25 @@ app.get('/coach-area', isAuthenticated, isCoach, (req, res) => {
   res.render('coach_area', { user: req.session.user });
 });
 
+// Coach Area - Database Management
+app.get('/coach-area/db_manage', isAuthenticated, isCoach, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const usersResult = await client.query('SELECT * FROM users ORDER BY id');
+    const videosResult = await client.query('SELECT * FROM videos ORDER BY id');
+
+    res.render('coach-area/db_manage', {
+      user: req.session.user,
+      users: usersResult.rows,
+      videos: videosResult.rows,
+      message: req.query.message,
+      error: req.query.error
+    });
+  } finally {
+    client.release();
+  }
+});
+
 // Training plan routes
 
 // GET training plan page
