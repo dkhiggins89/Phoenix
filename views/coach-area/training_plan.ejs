@@ -30,6 +30,30 @@
     </div>
   <% } %>
 
+<form action="/coach-area/training_plan" method="POST" class="mb-8 space-y-4">
+  <div>
+    <label for="session_date" class="block font-semibold mb-1">Session Date</label>
+    <input type="date" name="session_date" id="session_date" required class="w-full border rounded p-2" />
+  </div>
+
+  <div>
+    <label for="location" class="block font-semibold mb-1">Location</label>
+    <input type="text" name="location" id="location" required class="w-full border rounded p-2" />
+  </div>
+
+  <div>
+    <label for="notes" class="block font-semibold mb-1">Notes</label>
+    <textarea name="notes" id="notes" class="w-full border rounded p-2" rows="3"></textarea>
+  </div>
+
+  <div>
+    <label for="youtube_url" class="block font-semibold mb-1">YouTube Video URL (optional)</label>
+    <input type="url" name="youtube_url" id="youtube_url" placeholder="https://www.youtube.com/watch?v=..." class="w-full border rounded p-2" />
+  </div>
+
+  <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Add Training Plan</button>
+</form>
+
   <% if (trainingSessions.length === 0) { %>
     <p class="text-gray-700">No training sessions available yet.</p>
   <% } else { %>
@@ -44,12 +68,26 @@
         <% if (Array.isArray(session.drills) && session.drills.length > 0 && session.drills[0].id !== null) { %>
           <ul class="list-disc pl-6 space-y-2">
             <% session.drills.forEach(drill => { %>
-              <li>
-                <strong><%= drill.drill_name %></strong> — 
-                <%= drill.duration_minutes %> min<br>
-                <em class="text-sm text-gray-600"><%= drill.description %></em>
-              </li>
-            <% }); %>
+  <li class="mb-4">
+    <strong><%= drill.drill_name %></strong>
+    <% if (drill.youtube_url) { %>
+      <% 
+        // Extract YouTube video ID from URL
+        const urlParts = drill.youtube_url.split('v=');
+        const videoId = urlParts.length > 1 ? urlParts[1].split('&')[0] : null;
+      %>
+      <% if (videoId) { %>
+        <div class="mt-2">
+          <iframe class="w-full max-w-md aspect-video rounded" src="https://www.youtube.com/embed/<%= videoId %>" frameborder="0" allowfullscreen></iframe>
+        </div>
+      <% } else { %>
+        <p><a href="<%= drill.youtube_url %>" target="_blank" class="text-blue-600 underline">Watch Video</a></p>
+      <% } %>
+    <% } else { %>
+      <p><%= drill.description %></p>
+    <% } %>
+  </li>
+<% }); %>
           </ul>
         <% } else { %>
           <p class="text-sm text-gray-500">No drills added to this session yet.</p>
