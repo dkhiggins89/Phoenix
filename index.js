@@ -4,7 +4,6 @@ const path = require('path');
 const session = require('express-session'); // For managing user sessions
 const { Pool } = require('pg'); // Import the Pool class from pg
 const bcrypt = require('bcrypt'); // For secure password hashing
-const moment = require('moment'); // For date/time formatting
 
 // Initialize Express app
 const app = express();
@@ -106,7 +105,6 @@ pool.connect((err, client, done) => {
         `);
         console.log('training_drills table checked/created.');
 
-
         console.log("Database table check/creation sequence complete.");
 
         // Optional: Insert some dummy data if tables are empty
@@ -143,8 +141,9 @@ pool.connect((err, client, done) => {
          const sessionCountResult = await client.query("SELECT COUNT(*) AS count FROM training_sessions");
          if (sessionCountResult.rows[0].count === '0') {
             console.log("Training sessions table is empty, inserting dummy sessions.");
-            const dummySessionDate1 = moment().add(7, 'days').format('YYYY-MM-DD'); // Next week
-            const dummySession1 = await client.query("INSERT INTO training_sessions (session_date, location, notes) VALUES ($1, $2, $3) RETURNING id", [dummySessionDate1, 'Main Pitch', 'Focus on passing and movement']);
+            const dummySessionDate1 = new Date();
+            dummySessionDate1.setDate(dummySessionDate1.getDate() + 7); // 7 days from now
+            const dummySession1 = await client.query("INSERT INTO training_sessions (session_date, location, notes) VALUES ($1, $2, $3) RETURNING id", [dummySessionDate1.toISOString().slice(0,10), 'Main Pitch', 'Focus on passing and movement']);
             const sessionId1 = dummySession1.rows[0].id;
 
             await client.query("INSERT INTO training_drills (session_id, drill_name, duration_minutes, description) VALUES ($1, $2, $3, $4)", [sessionId1, 'Warm-up', 15, 'Light jogging and stretching']);
@@ -152,13 +151,14 @@ pool.connect((err, client, done) => {
             await client.query("INSERT INTO training_drills (session_id, drill_name, duration_minutes, description) VALUES ($1, $2, $3, $4)", [sessionId1, 'Small-sided Game', 45, 'Focus on quick decisions']);
             console.log(`Dummy training session 1 inserted with ID: ${sessionId1}`);
 
-            const dummySessionDate2 = moment().add(14, 'days').format('YYYY-MM-DD'); // Two weeks from now
-             const dummySession2 = await client.query("INSERT INTO training_sessions (session_date, location, notes) VALUES ($1, $2, $3) RETURNING id", [dummySessionDate2, 'Training Ground', 'Focus on shooting and defense']);
-             const sessionId2 = dummySession2.rows[0].id;
+            const dummySessionDate2 = new Date();
+            dummySessionDate2.setDate(dummySessionDate2.getDate() + 14); // 14 days from now
+            const dummySession2 = await client.query("INSERT INTO training_sessions (session_date, location, notes) VALUES ($1, $2, $3) RETURNING id", [dummySessionDate2.toISOString().slice(0,10), 'Training Ground', 'Focus on shooting and defense']);
+            const sessionId2 = dummySession2.rows[0].id;
 
-             await client.query("INSERT INTO training_drills (session_id, drill_name, duration_minutes, description) VALUES ($1, $2, $3, $4)", [sessionId2, 'Shooting Practice', 25, 'Various shooting techniques']);
-             await client.query("INSERT INTO training_drills (session_id, drill_name, duration_minutes, description) VALUES ($1, $2, $3, $4)", [sessionId2, 'Defensive Drills', 35, 'Positioning and tackling']);
-             console.log(`Dummy training session 2 inserted with ID: ${sessionId2}`);
+            await client.query("INSERT INTO training_drills (session_id, drill_name, duration_minutes, description) VALUES ($1, $2, $3, $4)", [sessionId2, 'Shooting Practice', 25, 'Various shooting techniques']);
+            await client.query("INSERT INTO training_drills (session_id, drill_name, duration_minutes, description) VALUES ($1, $2, $3, $4)", [sessionId2, 'Defensive Drills', 35, 'Positioning and tackling']);
+            console.log(`Dummy training session 2 inserted with ID: ${sessionId2}`);
          }
 
 
@@ -558,7 +558,6 @@ app.get('/coach-area/training-plan', isAuthenticated, isCoach, async (req, res) 
         res.render('training_plan', {
             user: req.session.user,
             trainingSessions: trainingSessions,
-            moment: moment, // Pass moment.js to the template for date formatting
             message: req.query.message,
             error: req.query.error
         });
@@ -568,7 +567,6 @@ app.get('/coach-area/training-plan', isAuthenticated, isCoach, async (req, res) 
         res.render('training_plan', {
             user: req.session.user,
             trainingSessions: [],
-            moment: moment,
             error: 'Error loading training data: ' + dbErr.message
         });
     } finally {
@@ -578,7 +576,6 @@ app.get('/coach-area/training-plan', isAuthenticated, isCoach, async (req, res) 
         }
     }
 });
-
 
 // --- Add more routes for other pages (e.g., /schedule, /roster, /contact) ---
 // Remember to apply isAuthenticated and/or isCoach middleware as needed
