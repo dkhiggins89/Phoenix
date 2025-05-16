@@ -274,10 +274,19 @@ async function initializeDatabase() {
       WITH (OIDS=FALSE)
     `);
 
-    console.log('Adding session table primary key constraint...');
-    await client.query(`
-      ALTER TABLE "session" ADD CONSTRAINT IF NOT EXISTS session_pkey PRIMARY KEY (sid)
-    `);
+console.log('Adding session table primary key constraint...');
+await client.query(`
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'session_pkey'
+  ) THEN
+    ALTER TABLE "session" ADD CONSTRAINT session_pkey PRIMARY KEY (sid);
+  END IF;
+END$$;
+`);
+
+
 
     console.log('Creating index on session expire...');
     await client.query(`
