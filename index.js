@@ -577,7 +577,7 @@ app.get('/coach-area/training_plan', isAuthenticated, isCoach, async (req, res) 
   error: req.query.error
 });
 
-      app.post('/coach-area/training_plan', isAuthenticated, isCoach, async (req, res) => {
+app.post('/coach-area/training_plan', isAuthenticated, isCoach, async (req, res) => {
   const { session_date, location, notes, youtube_url } = req.body;
   let client;
 
@@ -586,18 +586,29 @@ app.get('/coach-area/training_plan', isAuthenticated, isCoach, async (req, res) 
 
     // Insert new training session
     const sessionResult = await client.query(
-      INSERT INTO training_sessions (session_date, location, notes) VALUES ($1, $2, $3) RETURNING id,
+      `INSERT INTO training_sessions (session_date, location, notes) VALUES ($1, $2, $3) RETURNING id`,
       [session_date, location, notes]
     );
     const sessionId = sessionResult.rows[0].id;
 
     // Optionally insert drill with YouTube video if URL provided
     if (youtube_url && youtube_url.trim() !== '') {
-      // Extract YouTube video ID helper function could be used here or store full URL
       await client.query(
-        INSERT INTO training_drills (session_id, drill_name, youtube_url) VALUES ($1, $2, $3),
+        `INSERT INTO training_drills (session_id, drill_name, youtube_url) VALUES ($1, $2, $3)`,
         [sessionId, 'YouTube Video', youtube_url.trim()]
       );
+    }
+
+    res.redirect('/coach-area/training_plan?message=Training plan added successfully');
+
+  } catch (err) {
+    console.error('Error adding training plan:', err);
+    res.redirect('/coach-area/training_plan?error=Failed to add training plan');
+  } finally {
+    if (client) client.release();
+  }
+});
+
     }
 
     res.redirect('/coach-area/training_plan?message=Training plan added successfully');
