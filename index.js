@@ -12,51 +12,58 @@ console.log('✅ index.js started');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
 });
 
+// Middleware setup
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-app.use(session({
-  store: new pgSession({ pool }),
-  secret: process.env.SESSION_SECRET || 'your_secret_here',
-  resave: false,
-  saveUninitialized: false
-}));
+app.use(
+  session({
+    store: new pgSession({ pool }),
+    secret: process.env.SESSION_SECRET || 'your_secret_here',
+    resave: false,
+    saveUninitialized: false,
+  })
+);
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// Authentication middleware
 function isAuthenticated(req, res, next) {
-  if (req.session.user) next();
-  else res.redirect('/login?message=Please log in');
+  if (req.session.user) return next();
+  res.redirect('/login?message=Please log in');
 }
 
 function isCoach(req, res, next) {
-  if (req.session.user && req.session.user.role === 'coach') next();
-  else res.status(403).send('Unauthorized');
+  if (req.session.user && req.session.user.role === 'coach') return next();
+  res.status(403).send('Unauthorized');
 }
+
+// Routes
 
 // Home route
 app.get('/', (req, res) => res.send('Hello from Phoenix!'));
 
-// Login form
+// Login routes
 app.get('/login', (req, res) => {
   res.render('login', { error: null, message: req.query.message, user: req.session.user });
 });
 
-// Login POST
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
   const client = await pool.connect();
   try {
     const result = await client.query('SELECT * FROM users WHERE username = $1', [username]);
     const user = result.rows[0];
+
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.render('login', { error: 'Invalid credentials', message: null, user: null });
     }
+
     req.session.user = { id: user.id, username: user.username, role: user.role };
     res.redirect(user.role === 'coach' ? '/coach-area' : '/parent-area');
   } finally {
@@ -64,12 +71,11 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Register form
+// Register routes
 app.get('/register', (req, res) => {
   res.render('register', { error: null, message: req.query.message, user: req.session.user });
 });
 
-// Register POST
 app.post('/register', async (req, res) => {
   const { username, password } = req.body;
   const client = await pool.connect();
@@ -79,25 +85,28 @@ app.post('/register', async (req, res) => {
       return res.render('register', { error: 'Username already exists', message: null });
     }
     const hash = await bcrypt.hash(password, 10);
-    await client.query(
-      'INSERT INTO users (username, password, role) VALUES ($1, $2, $3)',
-      [username, hash, 'parent']
-    );
+    await client.query('INSERT INTO users (username, password, role) VALUES ($1, $2, $3)', [
+      username,
+      hash,
+      'parent',
+    ]);
     res.redirect('/login?message=Registration successful');
   } finally {
     client.release();
   }
 });
 
-// Logout
+// Logout route
 app.get('/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/'));
 });
 
-// Coach Area Home
+// Coach area home
 app.get('/coach-area', isAuthenticated, isCoach, (req, res) => {
   res.render('coach_area', { user: req.session.user });
 });
+
+// Training plan routes
 
 // GET training plan page
 app.get('/coach-area/training_plan', isAuthenticated, isCoach, async (req, res) => {
@@ -105,24 +114,30 @@ app.get('/coach-area/training_plan', isAuthenticated, isCoach, async (req, res) 
   try {
     const result = await client.query(`
       SELECT ts.id, ts.session_date, ts.location, ts.notes,
-        COALESCE(json_agg(json_build_object(
-          'id', td.id,
-          'drill_name', td.drill_name,
-          'duration_minutes', td.duration_minutes,
-          'description', td.description,
-          'youtube_url', td.youtube_url,
-          'completed', td.completed
-        )) FILTER (WHERE td.id IS NOT NULL), '[]') AS drills
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', td.id,
+              'drill_name', td.drill_name,
+              'duration_minutes', td.duration_minutes,
+              'description', td.description,
+              'youtube_url', td.youtube_url,
+              'completed', td.completed
+            )
+          ) FILTER (WHERE td.id IS NOT NULL),
+          '[]'
+        ) AS drills
       FROM training_sessions ts
       LEFT JOIN training_drills td ON ts.id = td.session_id
       GROUP BY ts.id
-      ORDER BY ts.session_date DESC;
+      ORDER BY ts.session_date DESC
     `);
+
     res.render('coach-area/training_plan', {
       user: req.session.user,
       trainingSessions: result.rows,
       message: req.query.message,
-      error: req.query.error
+      error: req.query.error,
     });
   } finally {
     client.release();
@@ -152,6 +167,9 @@ app.post('/coach-area/training_plan', isAuthenticated, isCoach, async (req, res)
     client.release();
   }
 });
+
+// Drill routes
+
 // Delete drill
 app.post('/coach-area/drills/:id/delete', isAuthenticated, isCoach, async (req, res) => {
   const client = await pool.connect();
@@ -174,7 +192,7 @@ app.post('/coach-area/drills/:id/complete', isAuthenticated, isCoach, async (req
   }
 });
 
-// Edit drill form page
+// Edit drill form
 app.get('/coach-area/drills/:id/edit', isAuthenticated, isCoach, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -204,6 +222,8 @@ app.post('/coach-area/drills/:id/edit', isAuthenticated, isCoach, async (req, re
     client.release();
   }
 });
+
+// Database initialization
 pool.connect((err, client, done) => {
   if (err) {
     console.error('❌ DB connection error:', err);
@@ -241,15 +261,14 @@ pool.connect((err, client, done) => {
           )
         `);
 
-await client.query(`
-  CREATE TABLE IF NOT EXISTS "session" (
-    "sid" varchar NOT NULL,
-    "sess" json NOT NULL,
-    "expire" timestamp(6) NOT NULL
-  )
-  WITH (OIDS=FALSE)
-`);
-
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS "session" (
+            sid varchar NOT NULL,
+            sess json NOT NULL,
+            expire timestamp(6) NOT NULL
+          )
+          WITH (OIDS=FALSE)
+        `);
 
         await client.query(`
           ALTER TABLE "session" ADD CONSTRAINT IF NOT EXISTS session_pkey PRIMARY KEY (sid)
@@ -266,9 +285,11 @@ await client.query(`
         done();
       }
     }
-
-    // Call the async function here
     initializeDatabase();
   }
 });
 
+// Start server
+app.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
+});
