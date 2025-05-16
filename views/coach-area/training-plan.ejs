@@ -1,37 +1,43 @@
-<!-- views/coach-area/training-plan.ejs -->
 <%- include('../partials/header') %>
 
-<div class="p-4 max-w-4xl mx-auto">
+<div class="max-w-5xl mx-auto p-4">
   <h1 class="text-3xl font-bold mb-6">Training Plan</h1>
 
-  <div class="bg-white shadow rounded-xl p-6 space-y-4">
-    <p>Welcome to the coach's training plan section. Here you can create, view, and manage training plans for your team.</p>
+  <% if (message) { %>
+    <div class="bg-green-100 text-green-800 p-3 rounded mb-4">
+      <%= message %>
+    </div>
+  <% } %>
+  <% if (error) { %>
+    <div class="bg-red-100 text-red-800 p-3 rounded mb-4">
+      <%= error %>
+    </div>
+  <% } %>
 
-    <!-- Sample structure for a training plan -->
-    <form action="/coach-area/training-plan" method="POST" class="space-y-4">
-      <div>
-        <label class="block font-semibold mb-1">Plan Title</label>
-        <input type="text" name="title" class="w-full border rounded p-2" required>
+  <% if (trainingSessions.length === 0) { %>
+    <p class="text-gray-700">No training sessions available yet.</p>
+  <% } else { %>
+    <% trainingSessions.forEach(session => { %>
+      <div class="mb-6 bg-white shadow rounded-xl p-4">
+        <h2 class="text-xl font-semibold mb-1"><%= moment(session.session_date).format('MMMM Do, YYYY') %> — <%= session.location %></h2>
+        <p class="text-gray-700 mb-3"><%= session.notes %></p>
+
+        <% if (session.drills.length > 0 && session.drills[0].id !== null) { %>
+          <ul class="list-disc pl-6 space-y-2">
+            <% session.drills.forEach(drill => { %>
+              <li>
+                <strong><%= drill.drill_name %></strong> — 
+                <%= drill.duration_minutes %> min<br>
+                <em class="text-sm text-gray-600"><%= drill.description %></em>
+              </li>
+            <% }); %>
+          </ul>
+        <% } else { %>
+          <p class="text-sm text-gray-500">No drills added to this session yet.</p>
+        <% } %>
       </div>
-
-      <div>
-        <label class="block font-semibold mb-1">Description</label>
-        <textarea name="description" class="w-full border rounded p-2" rows="4" required></textarea>
-      </div>
-
-      <div>
-        <label class="block font-semibold mb-1">Start Date</label>
-        <input type="date" name="startDate" class="w-full border rounded p-2" required>
-      </div>
-
-      <div>
-        <label class="block font-semibold mb-1">End Date</label>
-        <input type="date" name="endDate" class="w-full border rounded p-2" required>
-      </div>
-
-      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Save Plan</button>
-    </form>
-  </div>
+    <% }); %>
+  <% } %>
 </div>
 
 <%- include('../partials/footer') %>
