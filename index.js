@@ -233,7 +233,7 @@ pool.connect((err, client, done) => {
   } else {
 async function initializeDatabase() {
   try {
-    console.log('Running users table creation...');
+    console.log('Creating users table...');
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -243,7 +243,7 @@ async function initializeDatabase() {
       )
     `);
 
-    console.log('Running training_sessions table creation...');
+    console.log('Creating training_sessions table...');
     await client.query(`
       CREATE TABLE IF NOT EXISTS training_sessions (
         id SERIAL PRIMARY KEY,
@@ -253,7 +253,7 @@ async function initializeDatabase() {
       )
     `);
 
-    console.log('Running training_drills table creation...');
+    console.log('Creating training_drills table...');
     await client.query(`
       CREATE TABLE IF NOT EXISTS training_drills (
         id SERIAL PRIMARY KEY,
@@ -261,12 +261,17 @@ async function initializeDatabase() {
         drill_name TEXT,
         duration_minutes INTEGER,
         description TEXT,
-        youtube_url TEXT,
-        completed BOOLEAN DEFAULT FALSE
+        youtube_url TEXT
       )
     `);
 
-    console.log('Running session table creation...');
+    console.log('Ensuring "completed" column exists on training_drills...');
+    await client.query(`
+      ALTER TABLE training_drills
+      ADD COLUMN IF NOT EXISTS completed BOOLEAN DEFAULT FALSE
+    `);
+
+    console.log('Creating session table...');
     await client.query(`
       CREATE TABLE IF NOT EXISTS "session" (
         sid varchar NOT NULL,
@@ -276,21 +281,20 @@ async function initializeDatabase() {
       WITH (OIDS=FALSE)
     `);
 
-console.log('Adding session table primary key constraint...');
-await client.query(`
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'session_pkey'
-  ) THEN
-    ALTER TABLE "session" ADD CONSTRAINT session_pkey PRIMARY KEY (sid);
-  END IF;
-END$$;
-`);
+    console.log('Ensuring primary key on session table...');
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'session_pkey'
+        ) THEN
+          ALTER TABLE "session" ADD CONSTRAINT session_pkey PRIMARY KEY (sid);
+        END IF;
+      END
+      $$;
+    `);
 
-
-
-    console.log('Creating index on session expire...');
+    console.log('Creating index on session.expire...');
     await client.query(`
       CREATE INDEX IF NOT EXISTS IDX_session_expire ON "session" (expire)
     `);
@@ -302,6 +306,7 @@ END$$;
     done();
   }
 }
+
 
     initializeDatabase();
   }
