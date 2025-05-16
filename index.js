@@ -46,7 +46,9 @@ function isCoach(req, res, next) {
 // Routes
 
 // Home route
-app.get('/', (req, res) => res.send('Hello from Phoenix!'));
+app.get('/', (req, res) => {
+  res.render('index', { user: req.session.user });
+});
 
 // Login routes
 app.get('/login', (req, res) => {
