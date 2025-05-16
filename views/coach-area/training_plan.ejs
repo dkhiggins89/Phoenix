@@ -1,46 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Training Plan</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Training Plans - Spirit of Youth Phoenix</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="/style.css"/>
+  <link rel="stylesheet" href="/style.css">
 </head>
-<body class="bg-blue-50 text-gray-800">
-  <%- include('../_header') %>
-  <main class="container mx-auto p-4">
-    <button id="toggleArchive" class="bg-gray-200 px-3 py-1 rounded mb-4">Toggle Completed Drills</button>
-    <% trainingSessions.forEach(session=>{ %>
-      <section class="mb-8 bg-white p-4 rounded shadow">
-        <h3><%= new Date(session.session_date).toLocaleDateString() %> - <%= session.location %></h3>
-        <p><%= session.notes %></p>
-        <% const incomplete = session.drills.filter(d=>!d.completed); const completed = session.drills.filter(d=>d.completed); %>
-        <ul>
-          <% incomplete.forEach(drill=>{ %>
-            <li class="mb-2 border p-2">
-              <%= drill.drill_name %>
-              <div class="space-x-2 inline">
-                <form action="/coach-area/drills/<%= drill.id %>/complete" method="POST"><button>Complete</button></form>
-                <a href="/coach-area/drills/<%= drill.id %>/edit">Edit</a>
-                <form action="/coach-area/drills/<%= drill.id %>/delete" method="POST"><button>Delete</button></form>
-              </div>
-            </li>
-          <% }) %>
-        </ul>
-        <h4>Completed</h4>
-        <ul id="archiveList">
-          <% completed.forEach(drill=>{ %>
-            <li class="mb-2 border p-2 line-through"><%= drill.drill_name %></li>
-          <% }) %>
-        </ul>
-      </section>
-    <% }); %>
+<body class="bg-blue-50 text-gray-800 leading-relaxed">
+
+  <%- include('_header') %>
+
+  <main class="container mx-auto mt-8 p-4 md:px-8">
+    <div class="main-content-background"></div>
+
+    <section class="bg-white rounded-lg shadow-xl p-6 mb-8 border-t-4 border-blue-600">
+      <h2 class="text-3xl font-bold mb-6 text-blue-800">Training Plans</h2>
+
+      <% if (message) { %>
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+          <%= message %>
+        </div>
+      <% } %>
+
+      <% if (error) { %>
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <%= error %>
+        </div>
+      <% } %>
+
+      <% trainingSessions.forEach(session => { %>
+        <div class="mb-6 border border-gray-200 rounded-lg shadow p-4 bg-white">
+          <h3 class="text-xl font-semibold text-blue-700 mb-2">
+            <%= new Date(session.session_date).toLocaleDateString() %> — <%= session.location %>
+          </h3>
+          <p class="text-sm text-gray-700 mb-2"><%= session.notes %></p>
+
+          <% if (Array.isArray(session.drills) && session.drills.length > 0 && session.drills[0].id !== null) { %>
+            <h4 class="font-bold mt-3 text-blue-600">Drills:</h4>
+            <ul class="mt-2 space-y-2">
+              <% session.drills.forEach(drill => { %>
+                <li class="p-3 bg-gray-50 border rounded flex flex-col md:flex-row justify-between items-start md:items-center">
+                  <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-800">
+                      <%= drill.drill_name %>
+                      <% if (drill.completed) { %>
+                        <span class="text-green-600 ml-2 font-semibold">(Completed)</span>
+                      <% } %>
+                    </p>
+                    <% if (drill.duration_minutes) { %>
+                      <p class="text-sm text-gray-600">Duration: <%= drill.duration_minutes %> mins</p>
+                    <% } %>
+                    <% if (drill.description) { %>
+                      <p class="text-sm text-gray-600">Description: <%= drill.description %></p>
+                    <% } %>
+                    <% if (drill.youtube_url) { 
+                         const videoId = drill.youtube_url.split('v=')[1]?.split('&')[0];
+                         const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+                    %>
+                      <% if (embedUrl) { %>
+                        <iframe class="mt-2 w-full max-w-md h-48" src="<%= embedUrl %>" frameborder="0" allowfullscreen></iframe>
+                      <% } %>
+                    <% } %>
+                  </div>
+
+                  <div class="flex flex-wrap gap-2 mt-3 md:mt-0 md:ml-4">
+                    <% if (!drill.completed) { %>
+                      <form action="/coach-area/drills/<%= drill.id %>/complete" method="POST">
+                        <button class="bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1 rounded">Mark Complete</button>
+                      </form>
+                    <% } %>
+                    <a href="/coach-area/drills/<%= drill.id %>/edit" class="bg-yellow-500 hover:bg-yellow-600 text-white text-sm px-3 py-1 rounded">Edit</a>
+                    <form action="/coach-area/drills/<%= drill.id %>/delete" method="POST" onsubmit="return confirm('Are you sure?');">
+                      <button class="bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-1 rounded">Delete</button>
+                    </form>
+                  </div>
+                </li>
+              <% }) %>
+            </ul>
+          <% } else { %>
+            <p class="text-sm text-gray-500 mt-2">No drills added yet.</p>
+          <% } %>
+        </div>
+      <% }) %>
+
+      <hr class="my-6" />
+
+      <h3 class="text-2xl font-semibold mb-4 text-blue-700">Add New Training Session</h3>
+      <form action="/coach-area/training_plan" method="POST" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Date</label>
+          <input type="date" name="session_date" required class="mt-1 p-2 w-full border rounded"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Location</label>
+          <input type="text" name="location" required class="mt-1 p-2 w-full border rounded"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Notes</label>
+          <textarea name="notes" class="mt-1 p-2 w-full border rounded"></textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Optional YouTube Video URL</label>
+          <input type="url" name="youtube_url" class="mt-1 p-2 w-full border rounded"/>
+        </div>
+        <div>
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded">
+            Add Session
+          </button>
+        </div>
+      </form>
+    </section>
   </main>
-  <script>
-    const toggleBtn = document.getElementById('toggleArchive');
-    const archiveList = document.getElementById('archiveList');
-    toggleBtn.onclick = () => { archiveList.classList.toggle('hidden'); };
-  </script>
+
+  <footer class="bg-gray-900 text-gray-300 p-6 mt-12">
+    <div class="container mx-auto text-center text-sm">
+      &copy; <%= new Date().getFullYear() %> Spirit of Youth Phoenix. All rights reserved.
+    </div>
+  </footer>
 </body>
 </html>
