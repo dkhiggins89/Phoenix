@@ -526,12 +526,12 @@ app.post('/coach-area/users/:id/delete', isAuthenticated, isCoach, async (req, r
 });
 
 // Training Planning Page (Protected Route - only accessible if user is a coach)
-app.get('/coach-area/training-plan', isAuthenticated, isCoach, async (req, res) => {
+app.get('/coach-area/training_plan', isAuthenticated, isCoach, async (req, res) => {
     let client;
     try {
-        console.log('Attempting to connect to database for training-plan page...');
+        console.log('Attempting to connect to database for training_plan page...');
         client = await pool.connect();
-        console.log('Database client connected for training-plan page.');
+        console.log('Database client connected for training_plan page.');
 
         // Fetch training sessions and their associated drills
         const sessionsResult = await client.query(`
@@ -563,7 +563,7 @@ app.get('/coach-area/training-plan', isAuthenticated, isCoach, async (req, res) 
         });
 
     } catch (dbErr) {
-        console.error('Database error fetching data for training-plan page:', dbErr);
+        console.error('Database error fetching data for training_plan page:', dbErr);
         res.render('training_plan', {
             user: req.session.user,
             trainingSessions: [],
@@ -572,7 +572,7 @@ app.get('/coach-area/training-plan', isAuthenticated, isCoach, async (req, res) 
     } finally {
         if (client) {
             client.release();
-            console.log('Database client released for training-plan page.');
+            console.log('Database client released for training_plan page.');
         }
     }
 });
