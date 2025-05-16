@@ -209,54 +209,55 @@ pool.connect((err, client, done) => {
     console.error('❌ DB connection error:', err);
     process.exit(1);
   } else {
-    async function initDb() {
+    async function initializeDatabase() {
       try {
         await client.query(`
-  CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role VARCHAR(50) DEFAULT 'parent'
-  )
-`);
+          CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(255) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            role VARCHAR(50) DEFAULT 'parent'
+          )
+        `);
 
-await client.query(`
-  CREATE TABLE IF NOT EXISTS training_sessions (
-    id SERIAL PRIMARY KEY,
-    session_date DATE NOT NULL,
-    location TEXT,
-    notes TEXT
-  )
-`);
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS training_sessions (
+            id SERIAL PRIMARY KEY,
+            session_date DATE NOT NULL,
+            location TEXT,
+            notes TEXT
+          )
+        `);
 
-await client.query(`
-  CREATE TABLE IF NOT EXISTS training_drills (
-    id SERIAL PRIMARY KEY,
-    session_id INTEGER REFERENCES training_sessions(id) ON DELETE CASCADE,
-    drill_name TEXT,
-    duration_minutes INTEGER,
-    description TEXT,
-    youtube_url TEXT,
-    completed BOOLEAN DEFAULT FALSE
-  )
-`);
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS training_drills (
+            id SERIAL PRIMARY KEY,
+            session_id INTEGER REFERENCES training_sessions(id) ON DELETE CASCADE,
+            drill_name TEXT,
+            duration_minutes INTEGER,
+            description TEXT,
+            youtube_url TEXT,
+            completed BOOLEAN DEFAULT FALSE
+          )
+        `);
 
-await client.query(`
-  CREATE TABLE IF NOT EXISTS "session" (
-    "sid" varchar NOT NULL COLLATE "default",
-    "sess" json NOT NULL,
-    "expire" timestamp(6) NOT NULL
-  )
-  WITH (OIDS=FALSE)
-`);
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS "session" (
+            "sid" varchar NOT NULL COLLATE "default",
+            "sess" json NOT NULL,
+            "expire" timestamp(6) NOT NULL
+          )
+          WITH (OIDS=FALSE)
+        `);
 
-await client.query(`
-  ALTER TABLE "session" ADD CONSTRAINT IF NOT EXISTS "session_pkey" PRIMARY KEY ("sid")
-`);
+        await client.query(`
+          ALTER TABLE "session" ADD CONSTRAINT IF NOT EXISTS session_pkey PRIMARY KEY (sid)
+        `);
 
-await client.query(`
-  CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire")
-`);
+        await client.query(`
+          CREATE INDEX IF NOT EXISTS IDX_session_expire ON "session" (expire)
+        `);
+
         console.log('✅ DB initialized');
       } catch (e) {
         console.error('❌ DB init error:', e);
@@ -264,6 +265,9 @@ await client.query(`
         done();
       }
     }
-    initDb();
+
+    // Call the async function here
+    initializeDatabase();
   }
 });
+
