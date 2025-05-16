@@ -4,6 +4,7 @@ const path = require('path');
 const session = require('express-session'); // For managing user sessions
 const { Pool } = require('pg'); // Import the Pool class from pg
 const bcrypt = require('bcrypt'); // For secure password hashing
+const moment = require('moment'); // For date/time formatting
 
 // Initialize Express app
 const app = express();
@@ -79,6 +80,33 @@ pool.connect((err, client, done) => {
         `);
         console.log('Purchases table checked/created.');
 
+        // Create training_sessions table
+        console.log('Attempting to create training_sessions table...');
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS training_sessions (
+            id SERIAL PRIMARY KEY,
+            session_date DATE NOT NULL,
+            location VARCHAR(255),
+            notes TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+        `);
+        console.log('training_sessions table checked/created.');
+
+        // Create training_drills table
+        console.log('Attempting to create training_drills table...');
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS training_drills (
+            id SERIAL PRIMARY KEY,
+            session_id INTEGER REFERENCES training_sessions(id) ON DELETE CASCADE,
+            drill_name VARCHAR(255) NOT NULL,
+            duration_minutes INTEGER,
+            description TEXT
+          );
+        `);
+        console.log('training_drills table checked/created.');
+
+
         console.log("Database table check/creation sequence complete.");
 
         // Optional: Insert some dummy data if tables are empty
@@ -110,6 +138,29 @@ pool.connect((err, client, done) => {
            }
            console.log("Dummy videos inserted.");
          }
+
+         // Optional: Insert dummy training sessions if tables are empty
+         const sessionCountResult = await client.query("SELECT COUNT(*) AS count FROM training_sessions");
+         if (sessionCountResult.rows[0].count === '0') {
+            console.log("Training sessions table is empty, inserting dummy sessions.");
+            const dummySessionDate1 = moment().add(7, 'days').format('YYYY-MM-DD'); // Next week
+            const dummySession1 = await client.query("INSERT INTO training_sessions (session_date, location, notes) VALUES ($1, $2, $3) RETURNING id", [dummySessionDate1, 'Main Pitch', 'Focus on passing and movement']);
+            const sessionId1 = dummySession1.rows[0].id;
+
+            await client.query("INSERT INTO training_drills (session_id, drill_name, duration_minutes, description) VALUES ($1, $2, $3, $4)", [sessionId1, 'Warm-up', 15, 'Light jogging and stretching']);
+            await client.query("INSERT INTO training_drills (session_id, drill_name, duration_minutes, description) VALUES ($1, $2, $3, $4)", [sessionId1, 'Passing Drill', 30, 'Short and long passes']);
+            await client.query("INSERT INTO training_drills (session_id, drill_name, duration_minutes, description) VALUES ($1, $2, $3, $4)", [sessionId1, 'Small-sided Game', 45, 'Focus on quick decisions']);
+            console.log(`Dummy training session 1 inserted with ID: ${sessionId1}`);
+
+            const dummySessionDate2 = moment().add(14, 'days').format('YYYY-MM-DD'); // Two weeks from now
+             const dummySession2 = await client.query("INSERT INTO training_sessions (session_date, location, notes) VALUES ($1, $2, $3) RETURNING id", [dummySessionDate2, 'Training Ground', 'Focus on shooting and defense']);
+             const sessionId2 = dummySession2.rows[0].id;
+
+             await client.query("INSERT INTO training_drills (session_id, drill_name, duration_minutes, description) VALUES ($1, $2, $3, $4)", [sessionId2, 'Shooting Practice', 25, 'Various shooting techniques']);
+             await client.query("INSERT INTO training_drills (session_id, drill_name, duration_minutes, description) VALUES ($1, $2, $3, $4)", [sessionId2, 'Defensive Drills', 35, 'Positioning and tackling']);
+             console.log(`Dummy training session 2 inserted with ID: ${sessionId2}`);
+         }
+
 
       } catch (dbErr) {
         console.error('Database initialization error:', dbErr.message);
@@ -470,6 +521,60 @@ app.post('/coach-area/users/:id/delete', isAuthenticated, isCoach, async (req, r
     } finally {
         if (client) {
             client.release();
+        }
+    }
+});
+
+// Training Planning Page (Protected Route - only accessible if user is a coach)
+app.get('/coach-area/training-plan', isAuthenticated, isCoach, async (req, res) => {
+    let client;
+    try {
+        console.log('Attempting to connect to database for training-plan page...');
+        client = await pool.connect();
+        console.log('Database client connected for training-plan page.');
+
+        // Fetch training sessions and their associated drills
+        const sessionsResult = await client.query(`
+            SELECT
+                ts.id,
+                ts.session_date,
+                ts.location,
+                ts.notes,
+                json_agg(json_build_object(
+                    'id', td.id,
+                    'drill_name', td.drill_name,
+                    'duration_minutes', td.duration_minutes,
+                    'description', td.description
+                )) AS drills
+            FROM training_sessions ts
+            LEFT JOIN training_drills td ON ts.id = td.session_id
+            GROUP BY ts.id
+            ORDER BY ts.session_date DESC; -- Order by date, most recent first
+        `);
+        const trainingSessions = sessionsResult.rows;
+        console.log(`Fetched ${trainingSessions.length} training sessions.`);
+
+        console.log('Rendering training_plan page...');
+        res.render('training_plan', {
+            user: req.session.user,
+            trainingSessions: trainingSessions,
+            moment: moment, // Pass moment.js to the template for date formatting
+            message: req.query.message,
+            error: req.query.error
+        });
+
+    } catch (dbErr) {
+        console.error('Database error fetching data for training-plan page:', dbErr);
+        res.render('training_plan', {
+            user: req.session.user,
+            trainingSessions: [],
+            moment: moment,
+            error: 'Error loading training data: ' + dbErr.message
+        });
+    } finally {
+        if (client) {
+            client.release();
+            console.log('Database client released for training-plan page.');
         }
     }
 });
