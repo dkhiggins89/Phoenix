@@ -151,7 +151,7 @@ app.get('/coach-area/training_plan', isAuthenticated, isCoach, async (req, res) 
       FROM training_sessions ts
       LEFT JOIN training_drills td ON ts.id = td.session_id
       GROUP BY ts.id
-      ORDER BY ts.session_date DESC
+      ORDER BY ts.session_date ASC
     `);
 
     res.render('coach-area/training_plan', {
