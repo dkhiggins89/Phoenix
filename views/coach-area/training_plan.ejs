@@ -1,4 +1,19 @@
-<%- include('../_header') %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Training Plan - Spirit of Youth Phoenix</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body class="bg-blue-50 text-gray-800 leading-relaxed">
+
+  <%- include('/.._header') %>
+
+  <main class="container mx-auto mt-8 p-4 md:px-8">
+    <div class="main-content-background"></div>
+    <section class="bg-white rounded-lg shadow-xl p-6 mb-8 border-t-4 border-blue-600">
 
 <div class="max-w-5xl mx-auto p-4">
   <h1 class="text-3xl font-bold mb-6">Training Plan</h1>
@@ -42,3 +57,19 @@
     <% }); %>
   <% } %>
 </div>
+    </section>
+  </main>
+
+  <footer class="bg-gray-900 text-gray-300 p-6 mt-12">
+    <div class="container mx-auto text-center text-sm">
+      &copy; <%= new Date().getFullYear() %> Spirit of Youth Phoenix. All rights reserved.
+      <div class="mt-2">
+        <a href="#" class="text-gray-400 hover:text-white mx-2">Privacy Policy</a>
+        <span class="text-gray-600">|</span>
+        <a href="#" class="text-gray-400 hover:text-white mx-2">Terms of Service</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
