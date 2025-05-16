@@ -241,14 +241,15 @@ pool.connect((err, client, done) => {
           )
         `);
 
-        await client.query(`
-          CREATE TABLE IF NOT EXISTS "session" (
-            "sid" varchar NOT NULL COLLATE "default",
-            "sess" json NOT NULL,
-            "expire" timestamp(6) NOT NULL
-          )
-          WITH (OIDS=FALSE)
-        `);
+await client.query(`
+  CREATE TABLE IF NOT EXISTS "session" (
+    "sid" varchar NOT NULL,
+    "sess" json NOT NULL,
+    "expire" timestamp(6) NOT NULL
+  )
+  WITH (OIDS=FALSE)
+`);
+
 
         await client.query(`
           ALTER TABLE "session" ADD CONSTRAINT IF NOT EXISTS session_pkey PRIMARY KEY (sid)
