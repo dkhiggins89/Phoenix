@@ -526,7 +526,7 @@ app.post('/coach-area/users/:id/delete', isAuthenticated, isCoach, async (req, r
 });
 
 // Training Planning Page (Protected Route - only accessible if user is a coach)
-app.get('/coach-area/training_plan', isAuthenticated, isCoach, async (req, res) => {
+app.get('coach-area/training_plan', isAuthenticated, isCoach, async (req, res) => {
     let client;
     try {
         console.log('Attempting to connect to database for training_plan page...');
@@ -555,16 +555,16 @@ app.get('/coach-area/training_plan', isAuthenticated, isCoach, async (req, res) 
         console.log(`Fetched ${trainingSessions.length} training sessions.`);
 
         console.log('Rendering training_plan page...');
-        res.render('training_plan', {
-            user: req.session.user,
-            trainingSessions: trainingSessions,
-            message: req.query.message,
-            error: req.query.error
-        });
+        res.render('coach-area/training_plan', {
+  user: req.session.user,
+  trainingSessions,
+  message: req.query.message,
+  error: req.query.error
+});
 
     } catch (dbErr) {
         console.error('Database error fetching data for training_plan page:', dbErr);
-        res.render('training_plan', {
+        res.render('coach-area/training_plan', {
             user: req.session.user,
             trainingSessions: [],
             error: 'Error loading training data: ' + dbErr.message
