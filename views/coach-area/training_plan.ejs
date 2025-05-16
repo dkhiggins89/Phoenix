@@ -20,11 +20,12 @@
     <% trainingSessions.forEach(session => { %>
       <div class="mb-6 bg-white shadow rounded-xl p-4">
         <h2 class="text-xl font-semibold mb-1">
-          <%= new Date(session.session_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) %> — <%= session.location %>
+          <%= session.session_date ? new Date(session.session_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Unknown date' %>
+          — <%= session.location %>
         </h2>
         <p class="text-gray-700 mb-3"><%= session.notes %></p>
 
-        <% if (session.drills.length > 0 && session.drills[0].id !== null) { %>
+        <% if (Array.isArray(session.drills) && session.drills.length > 0 && session.drills[0].id !== null) { %>
           <ul class="list-disc pl-6 space-y-2">
             <% session.drills.forEach(drill => { %>
               <li>
