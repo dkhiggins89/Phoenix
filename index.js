@@ -526,7 +526,7 @@ app.post('/coach-area/users/:id/delete', isAuthenticated, isCoach, async (req, r
 });
 
 // Training Planning Page (Protected Route - only accessible if user is a coach)
-app.get('coach-area/training_plan', isAuthenticated, isCoach, async (req, res) => {
+app.get('/coach-area/training_plan', isAuthenticated, isCoach, async (req, res) => {
     let client;
     try {
         console.log('Attempting to connect to database for training_plan page...');
