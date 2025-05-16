@@ -1,0 +1,37 @@
+<!-- views/coach-area/training-plan.ejs -->
+<%- include('../partials/header') %>
+
+<div class="p-4 max-w-4xl mx-auto">
+  <h1 class="text-3xl font-bold mb-6">Training Plan</h1>
+
+  <div class="bg-white shadow rounded-xl p-6 space-y-4">
+    <p>Welcome to the coach's training plan section. Here you can create, view, and manage training plans for your team.</p>
+
+    <!-- Sample structure for a training plan -->
+    <form action="/coach-area/training-plan" method="POST" class="space-y-4">
+      <div>
+        <label class="block font-semibold mb-1">Plan Title</label>
+        <input type="text" name="title" class="w-full border rounded p-2" required>
+      </div>
+
+      <div>
+        <label class="block font-semibold mb-1">Description</label>
+        <textarea name="description" class="w-full border rounded p-2" rows="4" required></textarea>
+      </div>
+
+      <div>
+        <label class="block font-semibold mb-1">Start Date</label>
+        <input type="date" name="startDate" class="w-full border rounded p-2" required>
+      </div>
+
+      <div>
+        <label class="block font-semibold mb-1">End Date</label>
+        <input type="date" name="endDate" class="w-full border rounded p-2" required>
+      </div>
+
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Save Plan</button>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
