@@ -217,15 +217,19 @@ pool.connect((err, client, done) => {
     username VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     role VARCHAR(50) DEFAULT 'parent'
-  );
+  )
+`);
 
+await client.query(`
   CREATE TABLE IF NOT EXISTS training_sessions (
     id SERIAL PRIMARY KEY,
     session_date DATE NOT NULL,
     location TEXT,
     notes TEXT
-  );
+  )
+`);
 
+await client.query(`
   CREATE TABLE IF NOT EXISTS training_drills (
     id SERIAL PRIMARY KEY,
     session_id INTEGER REFERENCES training_sessions(id) ON DELETE CASCADE,
@@ -234,18 +238,24 @@ pool.connect((err, client, done) => {
     description TEXT,
     youtube_url TEXT,
     completed BOOLEAN DEFAULT FALSE
-  );
+  )
+`);
 
+await client.query(`
   CREATE TABLE IF NOT EXISTS "session" (
     "sid" varchar NOT NULL COLLATE "default",
     "sess" json NOT NULL,
     "expire" timestamp(6) NOT NULL
   )
-  WITH (OIDS=FALSE);
+  WITH (OIDS=FALSE)
+`);
 
-  ALTER TABLE "session" ADD CONSTRAINT IF NOT EXISTS "session_pkey" PRIMARY KEY ("sid");
+await client.query(`
+  ALTER TABLE "session" ADD CONSTRAINT IF NOT EXISTS "session_pkey" PRIMARY KEY ("sid")
+`);
 
-  CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
+await client.query(`
+  CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire")
 `);
         console.log('✅ DB initialized');
       } catch (e) {
