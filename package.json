@@ -13,10 +13,10 @@
     "@tailwindcss/cli": "^4.1.6",
     "@types/node": "^22.13.11",
     "bcrypt": "^6.0.0",
+    "connect-pg-simple": "^8.0.0",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
-    "connect-pg-simple": "^8.0.0",
     "pg": "^8.16.0",
     "sqlite3": "^5.1.7"
   },
