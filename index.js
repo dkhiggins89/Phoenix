@@ -392,7 +392,7 @@ app.get('/coach-area/db-manage', isAuthenticated, isCoach, async (req, res) => {
         const videos = videosResult.rows;
 
         // Render the database management page, passing the data
-        res.render('db_manage', { user: req.session.user, users: users, videos: videos });
+        res.render('db_manage', { user: req.session.user, users: users, videos: videos, message: req.query.message, error: req.query.error }); // Pass messages/errors
     } catch (dbErr) {
         console.error('Database error fetching data for manage page:', dbErr.message);
         // Render with empty arrays and an error message
@@ -400,6 +400,68 @@ app.get('/coach-area/db-manage', isAuthenticated, isCoach, async (req, res) => {
     } finally {
         if (client) {
             client.release(); // Release the client back to the pool
+        }
+    }
+});
+
+// Handle Update User Role POST request (Protected - Coach only)
+app.post('/coach-area/users/:id/update-role', isAuthenticated, isCoach, async (req, res) => {
+    const userId = req.params.id;
+    const newRole = req.body.role; // Role comes from the select input
+
+    // Validate the role to prevent unexpected values
+    if (newRole !== 'parent' && newRole !== 'coach') {
+        return res.redirect('/coach-area/db-manage?error=Invalid role specified.');
+    }
+
+    let client;
+    try {
+        client = await pool.connect();
+        // Update the user's role in the database
+        const result = await client.query("UPDATE users SET role = $1 WHERE id = $2", [newRole, userId]);
+
+        if (result.rowCount > 0) {
+            res.redirect('/coach-area/db-manage?message=User role updated successfully.');
+        } else {
+            res.redirect('/coach-area/db-manage?error=User not found.');
+        }
+
+    } catch (dbErr) {
+        console.error('Database error updating user role:', dbErr.message);
+        res.redirect('/coach-area/db-manage?error=An error occurred while updating role.');
+    } finally {
+        if (client) {
+            client.release();
+        }
+    }
+});
+
+// Handle Delete User POST request (Protected - Coach only)
+app.post('/coach-area/users/:id/delete', isAuthenticated, isCoach, async (req, res) => {
+    const userId = req.params.id;
+
+    let client;
+    try {
+        client = await pool.connect();
+
+        // Before deleting the user, delete any associated purchases to avoid foreign key constraints
+        await client.query("DELETE FROM purchases WHERE user_id = $1", [userId]);
+
+        // Delete the user from the database
+        const result = await client.query("DELETE FROM users WHERE id = $1", [userId]);
+
+        if (result.rowCount > 0) {
+            res.redirect('/coach-area/db-manage?message=User deleted successfully.');
+        } else {
+            res.redirect('/coach-area/db-manage?error=User not found.');
+        }
+
+    } catch (dbErr) {
+        console.error('Database error deleting user:', dbErr.message);
+        res.redirect('/coach-area/db-manage?error=An error occurred while deleting user.');
+    } finally {
+        if (client) {
+            client.release();
         }
     }
 });
