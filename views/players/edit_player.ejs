@@ -24,7 +24,7 @@
         </div>
       <% } %>
 
-      <form action="/players/<%= player.id %>?_method=PUT" method="POST" class="space-y-4">
+      <form action="/players/<%= player.id %>/edit" method="POST">
         <div>
           <label class="block font-semibold mb-1">Name</label>
           <input type="text" name="name" value="<%= player.name %>" required class="w-full border rounded p-2">
