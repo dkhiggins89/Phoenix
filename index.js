@@ -181,32 +181,50 @@ app.get('/players/:id', isAuthenticated, async (req, res) => {
   }
 });
 
-app.get('/players/:id/edit', isAuthenticated, isCoach, async (req, res) => {
+app.get('/players/:id', isAuthenticated, async (req, res) => {
   const client = await pool.connect();
   try {
-    const playerRes = await client.query(`SELECT * FROM players WHERE id = $1`, [req.params.id]);
-    if (playerRes.rows.length === 0) return res.redirect('/coach-area/team_management?error=Player not found');
+    const playerId = req.params.id;
+    const userId = req.session.user.id;
+    const role = req.session.user.role;
+
+    const playerRes = await client.query(`SELECT * FROM players WHERE id = $1`, [playerId]);
+    if (playerRes.rows.length === 0) return res.status(404).send('Player not found');
+
+    const player = playerRes.rows[0];
 
     const parentsRes = await client.query(`
-      SELECT id FROM player_parents WHERE player_id = $1
-    `, [req.params.id]);
+      SELECT u.id, u.username
+      FROM player_parents pp
+      JOIN users u ON u.id = pp.parent_id
+      WHERE pp.player_id = $1
+    `, [playerId]);
 
-    const allParents = await client.query(`
-      SELECT id, username FROM users WHERE role = 'parent' ORDER BY username
-    `);
+    const statsRes = await client.query(`
+      SELECT * FROM player_stats WHERE player_id = $1
+    `, [playerId]);
 
-    const parentIds = parentsRes.rows.map(row => row.id);
+    // 🔐 Role check
+    if (role === 'parent') {
+      const isParent = parentsRes.rows.some(p => p.id === userId);
+      if (!isParent) return res.status(403).send('Access denied');
+    }
 
-    res.render('player_edit', {
+    res.render('player_profile', {
       user: req.session.user,
-      player: playerRes.rows[0],
-      parentIds,
-      allParents: allParents.rows
+      player,
+      parents: parentsRes.rows,
+      stats: statsRes.rows[0]
     });
+
+  } catch (err) {
+    console.error('Error loading player profile:', err);
+    res.status(500).send('Something went wrong');
   } finally {
     client.release();
   }
 });
+
 
 app.post('/players/:id/edit', isAuthenticated, isCoach, async (req, res) => {
   const { name, shirt_number, positions, parent_ids } = req.body;
