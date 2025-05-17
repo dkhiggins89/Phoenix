@@ -150,7 +150,34 @@ app.get('/players/:id', isAuthenticated, async (req, res) => {
     const statsRes = await client.query(`
       SELECT * FROM player_stats WHERE player_id = $1
     `, [playerId]);
+    
+const matchStatsRes = await client.query(`
+  SELECT
+    f.match_date,
+    f.opponent,
+    f.location,
+    f.result,
+    fp.goals,
+    fp.assists,
+    fp.minutes_played,
+    fp.yellow_cards,
+    fp.red_cards
+  FROM fixture_players fp
+  JOIN fixtures f ON fp.fixture_id = f.id
+  WHERE fp.player_id = $1
+  ORDER BY f.match_date DESC
+`, [playerId]);
 
+    res.render('player_profile', {
+  user: req.session.user,
+  player,
+  parents: parentsRes.rows,
+  stats: statsRes.rows[0],
+  matchStats: matchStatsRes.rows // ← NEW
+});
+
+
+    
     // 🔐 Role check
     if (role === 'parent') {
       const isParent = parentsRes.rows.some(p => p.id === userId);
