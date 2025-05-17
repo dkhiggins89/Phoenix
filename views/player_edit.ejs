@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Edit Player - <%= player.name %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="bg-blue-50 text-gray-800 leading-relaxed">
+  <%- include('_header') %>
+
+  <main class="container mx-auto mt-8 p-4 md:px-8">
+    <div class="main-content-background"></div>
+
+    <section class="bg-white rounded-lg shadow-xl p-6 mb-8 border-t-4 border-yellow-500">
+      <h2 class="text-3xl font-bold text-yellow-600 mb-4">Edit Player</h2>
+
+      <form action="/players/<%= player.id %>/edit" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold mb-1">Name</label>
+          <input type="text" name="name" value="<%= player.name %>" required class="w-full border rounded p-2" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">Shirt Number</label>
+          <input type="number" name="shirt_number" value="<%= player.shirt_number %>" required class="w-full border rounded p-2" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">Positions</label>
+          <select name="positions" multiple class="w-full border rounded p-2">
+            <% ['GK','LB','CB','RB','CM','LM','RM','CAM','CDM','ST','LW','RW'].forEach(pos => { %>
+              <option value="<%= pos %>" <%= player.positions.includes(pos) ? 'selected' : '' %>><%= pos %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">Assign Parent(s)</label>
+          <select name="parent_ids" multiple class="w-full border rounded p-2">
+            <% allParents.forEach(parent => { %>
+              <option value="<%= parent.id %>" <%= parentIds.includes(parent.id) ? 'selected' : '' %>>
+                <%= parent.username %>
+              </option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="md:col-span-2">
+          <button type="submit" class="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold px-4 py-2 rounded">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <footer class="bg-gray-900 text-gray-300 p-6 mt-12">
+    <div class="container mx-auto text-center text-sm">
+      &copy; <%= new Date().getFullYear() %> Spirit of Youth Phoenix. All rights reserved.
+    </div>
+  </footer>
+</body>
+</html>
