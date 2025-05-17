@@ -169,6 +169,62 @@ app.get('/players/:id', isAuthenticated, async (req, res) => {
   }
 });
 
+app.get('/players/:id/edit', isAuthenticated, isCoach, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const playerRes = await client.query(`SELECT * FROM players WHERE id = $1`, [req.params.id]);
+    if (playerRes.rows.length === 0) return res.redirect('/coach-area/team_management?error=Player not found');
+
+    const parentsRes = await client.query(`
+      SELECT id FROM player_parents WHERE player_id = $1
+    `, [req.params.id]);
+
+    const allParents = await client.query(`
+      SELECT id, username FROM users WHERE role = 'parent' ORDER BY username
+    `);
+
+    const parentIds = parentsRes.rows.map(row => row.id);
+
+    res.render('player_edit', {
+      user: req.session.user,
+      player: playerRes.rows[0],
+      parentIds,
+      allParents: allParents.rows
+    });
+  } finally {
+    client.release();
+  }
+});
+
+app.post('/players/:id/edit', isAuthenticated, isCoach, async (req, res) => {
+  const { name, shirt_number, positions, parent_ids } = req.body;
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      UPDATE players
+      SET name = $1, shirt_number = $2, positions = $3
+      WHERE id = $4
+    `, [name, parseInt(shirt_number), Array.isArray(positions) ? positions : [positions], req.params.id]);
+
+    // Clear old parents and re-add
+    await client.query(`DELETE FROM player_parents WHERE player_id = $1`, [req.params.id]);
+
+    if (parent_ids) {
+      const ids = Array.isArray(parent_ids) ? parent_ids : [parent_ids];
+      for (const pid of ids) {
+        await client.query(`
+          INSERT INTO player_parents (player_id, parent_id)
+          VALUES ($1, $2) ON CONFLICT DO NOTHING
+        `, [req.params.id, pid]);
+      }
+    }
+
+    res.redirect(`/players/${req.params.id}?message=Profile updated`);
+  } finally {
+    client.release();
+  }
+});
+
 
 // Training plan routes
 
