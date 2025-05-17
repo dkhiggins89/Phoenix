@@ -28,7 +28,7 @@
       <% } %>
 
       <!-- Add Player Form -->
-      <form action="/coach-area/team-planning" method="POST" class="grid md:grid-cols-2 gap-4 mb-8">
+      <form action="/coach-area/team_management" method="POST" class="grid md:grid-cols-2 gap-4 mb-8">
         <div>
           <label class="block text-sm font-medium mb-1">Player Name</label>
           <input type="text" name="name" required class="w-full border rounded p-2" />
@@ -86,7 +86,7 @@
                 <%= player.parents.map(p => p.username).join(', ') %>
               </p>
             <% } %>
-            <form action="/coach-area/team-planning/<%= player.id %>/delete" method="POST" class="mt-3">
+            <form action="/coach-area/team_management/<%= player.id %>/delete" method="POST" class="mt-3">
               <button type="submit" class="text-red-600 hover:underline text-sm">Remove</button>
             </form>
           </div>
