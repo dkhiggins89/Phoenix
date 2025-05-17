@@ -222,6 +222,84 @@ app.get('/coach-area/training_plan/archive', isAuthenticated, isCoach, async (re
   }
 });
 
+app.get('/coach-area/team_management', isAuthenticated, isCoach, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const players = await client.query(`
+      SELECT p.*, 
+        COALESCE(json_agg(DISTINCT u.*) FILTER (WHERE u.id IS NOT NULL), '[]') AS parents
+      FROM players p
+      LEFT JOIN player_parents pp ON p.id = pp.player_id
+      LEFT JOIN users u ON u.id = pp.parent_id
+      GROUP BY p.id
+      ORDER BY p.shirt_number ASC
+    `);
+
+    const parents = await client.query(`SELECT id, username FROM users WHERE role = 'parent' ORDER BY username`);
+
+    res.render('coach-area/team_management', {
+      user: req.session.user,
+      players: players.rows,
+      parents: parents.rows,
+      message: req.query.message,
+      error: req.query.error
+    });
+  } finally {
+    client.release();
+  }
+});
+
+app.post('/coach-area/team_management', isAuthenticated, isCoach, async (req, res) => {
+  const { name, shirt_number, positions, parent_ids } = req.body;
+  const client = await pool.connect();
+
+  try {
+    const result = await client.query(
+      `INSERT INTO players (name, shirt_number, positions)
+       VALUES ($1, $2, $3) RETURNING id`,
+      [name, parseInt(shirt_number), Array.isArray(positions) ? positions : [positions]]
+    );
+    const playerId = result.rows[0].id;
+
+    // Link parents
+    if (parent_ids) {
+      const ids = Array.isArray(parent_ids) ? parent_ids : [parent_ids];
+      for (const pid of ids) {
+        await client.query(
+          `INSERT INTO player_parents (player_id, parent_id)
+           VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+          [playerId, pid]
+        );
+      }
+    }
+
+    // Initialize player stats
+    await client.query(`INSERT INTO player_stats (player_id) VALUES ($1)`, [playerId]);
+
+    res.redirect('/coach-area/team_management?message=Player added');
+  } catch (e) {
+    console.error('Error adding player:', e);
+    res.redirect('/coach-area/team_management?error=Error adding player');
+  } finally {
+    client.release();
+  }
+});
+
+
+app.post('/coach-area/team_management/:id/delete', isAuthenticated, isCoach, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query(`DELETE FROM players WHERE id = $1`, [req.params.id]);
+    res.redirect('/coach-area/team_management?message=Player removed');
+  } catch (e) {
+    console.error('Error deleting player:', e);
+    res.redirect('/coach-area/team_management?error=Could not remove player');
+  } finally {
+    client.release();
+  }
+});
+
+
 
 // Drill routes
 
