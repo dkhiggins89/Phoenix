@@ -376,6 +376,29 @@ app.post('/coach-area/team_management/:id/delete', isAuthenticated, isCoach, asy
   }
 });
 
+// Show Edit Player Form
+app.get('/players/:id/edit', isAuthenticated, isCoach, async (req, res) => {
+  const playerId = req.params.id;
+  const client = await pool.connect();
+  try {
+    const result = await client.query('SELECT * FROM players WHERE id = $1', [playerId]);
+    const player = result.rows[0];
+    if (!player) {
+      return res.status(404).send('Player not found');
+    }
+    res.render('players/edit_player', {
+      user: req.session.user,
+      player,
+      message: req.query.message,
+      error: req.query.error
+    });
+  } catch (err) {
+    console.error('Error loading player for edit:', err);
+    res.status(500).send('Something went wrong');
+  } finally {
+    client.release();
+  }
+});
 
 
 // Drill routes
