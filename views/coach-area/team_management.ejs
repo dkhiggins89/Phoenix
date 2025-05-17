@@ -81,6 +81,7 @@
             <p class="text-sm text-gray-600 mb-1">
               Positions: <%= player.positions.join(', ') %>
             </p>
+<a href="/players/<%= player.id %>" class="text-blue-600 hover:underline text-sm">View Profile</a>
             <% if (player.parents.length > 0) { %>
               <p class="text-xs text-gray-500">Parents: 
                 <%= player.parents.map(p => p.username).join(', ') %>
