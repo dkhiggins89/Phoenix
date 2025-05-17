@@ -29,9 +29,21 @@
           <label class="block font-semibold mb-1">Name</label>
           <input type="text" name="name" value="<%= player.name %>" required class="w-full border rounded p-2">
         </div>
-        <div>
-          <label class="block font-semibold mb-1">Position</label>
-          <input type="text" name="position" value="<%= player.position %>" required class="w-full border rounded p-2">
+          <label class="block text-sm font-medium mb-1">Positions</label>
+          <select name="positions" multiple class="w-full border rounded p-2">
+            <option value="GK">GK</option>
+            <option value="LB">LB</option>
+            <option value="CB">CB</option>
+            <option value="RB">RB</option>
+            <option value="CM">CM</option>
+            <option value="LM">LM</option>
+            <option value="RM">RM</option>
+            <option value="CAM">CAM</option>
+            <option value="CDM">CDM</option>
+            <option value="ST">ST</option>
+            <option value="LW">LW</option>
+            <option value="RW">RW</option>
+          </select>
         </div>
         <div>
           <label class="block font-semibold mb-1">Shirt Number</label>
