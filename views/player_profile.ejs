@@ -19,6 +19,9 @@
         </div>
         <div>
           <h2 class="text-3xl font-bold text-blue-800"><%= player.name %></h2>
+<% if (user.role === 'coach') { %>
+  <a href="/players/<%= player.id %>/edit" class="text-sm text-yellow-600 hover:underline ml-2">Edit</a>
+<% } %>
           <p class="text-sm text-gray-600">Positions: <%= player.positions.join(', ') %></p>
           <% if (parents.length > 0) { %>
             <p class="text-sm text-gray-500">Parents: <%= parents.map(p => p.username).join(', ') %></p>
