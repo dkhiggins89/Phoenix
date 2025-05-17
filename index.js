@@ -334,6 +334,37 @@ async function initializeDatabase() {
       WITH (OIDS=FALSE)
     `);
 
+    // After training_drills table creation
+await client.query(`
+  CREATE TABLE IF NOT EXISTS players (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    shirt_number INTEGER UNIQUE NOT NULL,
+    positions TEXT[] DEFAULT '{}',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+await client.query(`
+  CREATE TABLE IF NOT EXISTS player_parents (
+    player_id INTEGER REFERENCES players(id) ON DELETE CASCADE,
+    parent_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    PRIMARY KEY (player_id, parent_id)
+  )
+`);
+
+await client.query(`
+  CREATE TABLE IF NOT EXISTS player_stats (
+    player_id INTEGER PRIMARY KEY REFERENCES players(id) ON DELETE CASCADE,
+    goals INTEGER DEFAULT 0,
+    assists INTEGER DEFAULT 0,
+    minutes INTEGER DEFAULT 0,
+    appearances INTEGER DEFAULT 0,
+    yellow_cards INTEGER DEFAULT 0,
+    red_cards INTEGER DEFAULT 0
+  )
+`);
+
     console.log('Ensuring primary key on session table...');
     await client.query(`
       DO $$
