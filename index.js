@@ -151,59 +151,6 @@ app.get('/players/:id', isAuthenticated, async (req, res) => {
       SELECT * FROM player_stats WHERE player_id = $1
     `, [playerId]);
 
-    // 🔐 Check if the current user is an assigned parent (if role is parent)
-    if (role === 'parent') {
-      const isParent = parentsRes.rows.some(p => p.id === userId);
-      if (!isParent) return res.status(403).send('Access denied');
-    }
-
-    res.render('player_profile', {
-      user: req.session.user,
-      player,
-      parents: parentsRes.rows,
-      stats: statsRes.rows[0]
-    });
-
-  } catch (err) {
-    console.error('Error loading player profile:', err);
-    res.status(500).send('Something went wrong');
-  } finally {
-    client.release();
-  }
-});
-
-
-  } catch (err) {
-    console.error('Error loading player profile:', err);
-    res.status(500).send('Something went wrong');
-  } finally {
-    client.release();
-  }
-});
-
-app.get('/players/:id', isAuthenticated, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const playerId = req.params.id;
-    const userId = req.session.user.id;
-    const role = req.session.user.role;
-
-    const playerRes = await client.query(`SELECT * FROM players WHERE id = $1`, [playerId]);
-    if (playerRes.rows.length === 0) return res.status(404).send('Player not found');
-
-    const player = playerRes.rows[0];
-
-    const parentsRes = await client.query(`
-      SELECT u.id, u.username
-      FROM player_parents pp
-      JOIN users u ON u.id = pp.parent_id
-      WHERE pp.player_id = $1
-    `, [playerId]);
-
-    const statsRes = await client.query(`
-      SELECT * FROM player_stats WHERE player_id = $1
-    `, [playerId]);
-
     // 🔐 Role check
     if (role === 'parent') {
       const isParent = parentsRes.rows.some(p => p.id === userId);
@@ -224,6 +171,7 @@ app.get('/players/:id', isAuthenticated, async (req, res) => {
     client.release();
   }
 });
+
 
 
 app.post('/players/:id/edit', isAuthenticated, isCoach, async (req, res) => {
