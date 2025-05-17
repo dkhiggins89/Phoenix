@@ -474,6 +474,34 @@ async function initializeDatabase() {
       )
     `);
 
+    console.log('Creating fixtures table...');
+await client.query(`
+  CREATE TABLE IF NOT EXISTS fixtures (
+    id SERIAL PRIMARY KEY,
+    match_date DATE NOT NULL,
+    opponent VARCHAR(255),
+    location VARCHAR(255),
+    result VARCHAR(20),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+`);
+
+    console.log('Creating fixture_players table...');
+await client.query(`
+  CREATE TABLE IF NOT EXISTS fixture_players (
+    id SERIAL PRIMARY KEY,
+    fixture_id INTEGER REFERENCES fixtures(id) ON DELETE CASCADE,
+    player_id INTEGER REFERENCES players(id) ON DELETE CASCADE,
+    goals INTEGER DEFAULT 0,
+    assists INTEGER DEFAULT 0,
+    minutes_played INTEGER,
+    yellow_cards INTEGER DEFAULT 0,
+    red_cards INTEGER DEFAULT 0
+  );
+`);
+
+
     console.log('Creating training_sessions table...');
     await client.query(`
       CREATE TABLE IF NOT EXISTS training_sessions (
