@@ -127,6 +127,49 @@ app.get('/coach-area/db_manage', isAuthenticated, isCoach, async (req, res) => {
   }
 });
 
+//Player Profiles
+app.get('/players/:id', isAuthenticated, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const playerId = req.params.id;
+
+    const playerRes = await client.query(`
+      SELECT * FROM players WHERE id = $1
+    `, [playerId]);
+
+    if (playerRes.rows.length === 0) {
+      return res.status(404).send('Player not found');
+    }
+
+    const player = playerRes.rows[0];
+
+    const parentsRes = await client.query(`
+      SELECT u.id, u.username
+      FROM player_parents pp
+      JOIN users u ON u.id = pp.parent_id
+      WHERE pp.player_id = $1
+    `, [playerId]);
+
+    const statsRes = await client.query(`
+      SELECT * FROM player_stats WHERE player_id = $1
+    `, [playerId]);
+
+    res.render('player_profile', {
+      user: req.session.user,
+      player,
+      parents: parentsRes.rows,
+      stats: statsRes.rows[0]
+    });
+
+  } catch (err) {
+    console.error('Error loading player profile:', err);
+    res.status(500).send('Something went wrong');
+  } finally {
+    client.release();
+  }
+});
+
+
 // Training plan routes
 
 // GET training plan page
